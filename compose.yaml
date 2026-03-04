@@ -12,6 +12,7 @@ services:
     build:
       context: ./backend
       dockerfile: Dockerfile
+      target: dev
     secrets:
       - db-password
     environment:
@@ -40,18 +41,20 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      target: dev
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/usr/src/app
-      - /usr/src/app/node_modules
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - app-network
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
   db:
-    image: postgres
+    image: postgres:alpine
     restart: always
     user: postgres
     secrets:

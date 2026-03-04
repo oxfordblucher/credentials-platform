@@ -1,46 +1,30 @@
-# syntax=docker/dockerfile:1
+FROM node:20-alpine AS development-dependencies-env
+COPY . /app
+WORKDIR /app
+RUN npm ci
 
-ARG NODE_VERSION=24.11.1-alpine
-
-FROM node:${NODE_VERSION}-alpine
-
-# Use production node environment by default.
-ENV NODE_ENV development
-WORKDIR /usr/src/app
-
-# Download dependencies as a separate step to take advantage of Docker's caching.
-# Leverage a cache mount to /root/.npm to speed up subsequent builds.
-# Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
-# into this layer.
-RUN --mount=type=bind,source=package.json,target=package.json \
-    --mount=type=bind,source=package-lock.json,target=package-lock.json \
-    --mount=type=cache,target=/root/.npm \
-    npm ci
-
-# Run the application as a non-root user.
-USER node
-
-# Copy the rest of the source files into the image.
-COPY . .
-
-# Expose the port that the application listens on.
-EXPOSE 3000
-
-# Run the application.
-CMD npm run dev
-
-
-# Stage 2: production
-FROM node:${NODE_VERSION}-alpine AS prod 
-
-ENV NODE_ENV production
-WORKDIR /usr/src/app
-
-COPY --from=dev /usr/src/app/package*.json ./
+FROM node:20-alpine AS production-dependencies-env
+COPY ./package.json package-lock.json /app/
+WORKDIR /app
 RUN npm ci --omit=dev
 
-COPY --from=dev /usr/src/app/dist ./dist
-USER node
+FROM node:20-alpine AS build-env
+COPY . /app/
+COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+WORKDIR /app
+RUN npm run build
 
+FROM node:20-alpine AS dev
+COPY . /app/
+COPY --from=development-dependencies-env /app/node_modules /app/node_modules
+WORKDIR /app
+ENV CHOKIDAR_USEPOLLING=true
 EXPOSE 3000
-CMD ["node", "dist/index.js"]
+CMD ["npm", "run", "dev"]
+
+FROM node:20-alpine
+COPY ./package.json package-lock.json /app/
+COPY --from=production-dependencies-env /app/node_modules /app/node_modules
+COPY --from=build-env /app/build /app/build
+WORKDIR /app
+CMD ["npm", "run", "start"]

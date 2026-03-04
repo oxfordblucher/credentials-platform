@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG NODE_VERSION=24.11.1-alpine
+ARG NODE_VERSION=24.11.1
 
 # Stage 1: development
 FROM node:${NODE_VERSION}-alpine AS dev
@@ -27,7 +27,7 @@ COPY . .
 EXPOSE 3000
 
 # Run the application.
-CMD npm run dev
+CMD ["npx", "nodemon", "--legacy-watch", "index.js"]
 
 
 # Stage 2: production
