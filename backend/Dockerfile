@@ -27,7 +27,7 @@ COPY . .
 EXPOSE 3000
 
 # Run the application.
-CMD ["npx", "nodemon", "--legacy-watch", "index.js"]
+CMD ["npx", "tsx", "watch", "./src/index.ts"]
 
 
 # Stage 2: production
