@@ -1,6 +1,6 @@
 {
   "include": [
-    "**/*",
+    "src/**/*",
   ],
   "exclude": [
     "node_modules",
@@ -9,11 +9,12 @@
   "compilerOptions": {
     "lib": ["ES2022"],
     "target": "ES2022",
-    "module": "ES2022",
+    "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
     "skipLibCheck": true,
     "esModuleInterop": true,
-    "incremental": true
+    "incremental": true,
+    "noEmit": true
   }
 }
