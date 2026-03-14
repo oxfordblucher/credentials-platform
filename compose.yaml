@@ -21,12 +21,13 @@ services:
       DB_HOST: db
       DB_PORT: 5432
       DB_PASSWORD_FILE: /run/secrets/db-password
+      JWT_SECRET_FILE: /run/secrets/jwt-secret
     ports:
       - "3001:3000"
     networks:
       - app-network
     healthcheck:
-      test: ["CMD", "wget", "--spider", "http://localhost:3000/health"]
+      test: ["CMD", "wget", "--spider", "http://localhost:3000/api/health"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -78,6 +79,8 @@ volumes:
 secrets:
   db-password:
     file: db/password.txt
+  jwt-secret:
+    file: db/jwt_secret.txt
 networks:
   app-network:
     driver: bridge

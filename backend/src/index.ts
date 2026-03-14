@@ -12,7 +12,7 @@ app.use(apiBase + '/auth', authRouter);
 app.use(apiBase + '/profile', profileRouter);
 app.use(apiBase + '/notification', notificationRouter);
 
-app.get('/health', (req: Request, res: Response) => {
+app.get('/api/health', (req: Request, res: Response) => {
     res.status(200).json({
       message: 'Success'
     });

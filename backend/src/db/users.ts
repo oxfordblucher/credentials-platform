@@ -1,5 +1,7 @@
-import { pgTable, unique, date, varchar, uuid, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, unique, date, varchar, uuid, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+
+export const roleEnum = pgEnum('role', ['team member', 'manager', 'admin']);
 
 export const users = pgTable("users", {
   id: uuid().defaultRandom().primaryKey(),
@@ -8,6 +10,8 @@ export const users = pgTable("users", {
   dob: date().notNull(),
   email: varchar({ length: 255 }).unique().notNull(),
   password: varchar({ length: 255 }).notNull(),
-  created: timestamp(),
-  login: timestamp("login")
+  role: roleEnum(),
+  confirmed: boolean().notNull().default(false),
+  created: timestamp().notNull().defaultNow(),
+  login: timestamp("last_login")
 }); 

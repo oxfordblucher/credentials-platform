@@ -5,6 +5,6 @@ const profileRouter = Router();
 
 profileRouter.get('/', getProfile);
 profileRouter.put('/', updateProfile);
-profileRouter.patch('/delete', deleteProfile);
+profileRouter.patch('/delete/:id', deleteProfile);
 
 export default profileRouter;

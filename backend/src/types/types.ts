@@ -1,13 +1,15 @@
-export interface UserInput {
+export interface User {
+  id: string;
   first: string;
   last: string;
-  dob: string;
+  dob: Date;
+  role: string;
   email: string;
   password: string;
-}
-
-export interface DBUser extends UserInput {
-  id: string;
   created: Date;
   login: Date | null;
 }
+
+export type RegisterUser = Pick<User, "first" | "last" | "dob" | "email" | "password" | "role">
+
+export type LoginUser = Pick<User, "email" | "password">
