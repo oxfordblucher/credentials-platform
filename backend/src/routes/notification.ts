@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { getNotifications, deleteNotification, clearAllNotifications, markNotificationAsRead, markAllAsRead } from '../controllers/notification.js';
 
-const notificationRouter = Router();
+const router = Router();
 
-notificationRouter.get('/', getNotifications);
-notificationRouter.delete('/:id', deleteNotification);
-notificationRouter.delete('/clear', clearAllNotifications);
-notificationRouter.patch('/:id/read', markNotificationAsRead);
-notificationRouter.patch('/read', markAllAsRead);
+router.get('/', getNotifications);
+router.delete('/:id', deleteNotification);
+router.delete('/clear', clearAllNotifications);
+router.patch('/:id/read', markNotificationAsRead);
+router.patch('/read', markAllAsRead);
 
-export default notificationRouter;
+export default router;

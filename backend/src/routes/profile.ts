@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { getProfile, updateProfile, deleteProfile } from '../controllers/profile.js';
 
-const profileRouter = Router();
+const router = Router();
 
-profileRouter.get('/', getProfile);
-profileRouter.put('/', updateProfile);
-profileRouter.patch('/delete/:id', deleteProfile);
+router.get('/', getProfile);
+router.put('/', updateProfile);
+router.patch('/delete/:id', deleteProfile);
 
-export default profileRouter;
+export default router;

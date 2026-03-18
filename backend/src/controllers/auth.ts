@@ -1,7 +1,7 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { users } from '../db/users.js';
-import { RegisterUser, LoginUser } from '../types/types.js';
-import { createUser } from '../services/user.js';
+import { createUser, fetchUser, verifyPW } from '../services/user.js';
+import { AppError } from '../errors/AppError.js';
 import jwt from 'jsonwebtoken';
 import { z } from "zod";
 
@@ -14,27 +14,36 @@ const registerSchema = z.object({
   role: z.string().regex(/^(admin|manager|team member)$/)
 });
 
-export const registerUser = async (req: Request, res: Response) => {
+const loginSchema = z.object({
+  email: z.email(),
+  password: z.string().min(8)
+});
+
+export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = registerSchema.parse(req.body);
 
     const created = await createUser(validated);
+
+    res.status(201).json({
+      message: 'User registered successfully'
+    })
   }
   catch (error) {
-    res.status(500).json({
-      message: 'Error registering user'
-    });
+    next(error);
   }
 }
 
-export const loginUser = (req: Request, res: Response) => {
+export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    const validated = loginSchema.parse(req.body);
+    const user = await fetchUser(validated.email);
 
-    const loginInput: LoginUser = {
-      email,
-      password
-    };
+    if (!user) throw new AppError(404, 'User not found');
+
+    const passwordMatch = await verifyPW(validated.password, user.password);
+
+    if (!passwordMatch) throw new AppError(401, 'Invalid credentials');
 
     res.status(200).json({
       message: 'User logged in successfully'

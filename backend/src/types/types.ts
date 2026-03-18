@@ -11,5 +11,3 @@ export interface User {
 }
 
 export type RegisterUser = Pick<User, "first" | "last" | "dob" | "email" | "password" | "role">
-
-export type LoginUser = Pick<User, "email" | "password">
