@@ -1,4 +1,5 @@
 import { drizzle } from "drizzle-orm/node-postgres";
+import { eq } from 'drizzle-orm';
 import users from "../db/users.js";
 import { RegisterUser } from "../types/types.js";
 import bcrypt from 'bcrypt';
@@ -23,7 +24,7 @@ export const fetchUser = async (email: string) => {
     const fetched = await db.select({
         id: users.id,
         hash: users.password
-    }).from(users)
+    }).from(users).where(eq(users.email, email));
 
     return fetched;
 }

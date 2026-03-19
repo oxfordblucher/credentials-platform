@@ -6,6 +6,7 @@ export const sessions = pgTable("sessions", {
   id: uuid().defaultRandom().primaryKey(),
   userId: uuid().notNull().references(() => users.id),
   token: varchar({ length: 255 }).notNull(),
-  created: timestamp(),
-  expiration: timestamp()
+  created: timestamp().notNull().defaultNow(),
+  expiration: timestamp().default(sql`now() + INTERVAL '7d'`),
+  device: varchar({ length: 255 })
 });
