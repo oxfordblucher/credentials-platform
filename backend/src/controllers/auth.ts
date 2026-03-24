@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from "zod";
 import fs from "fs";
-import { users } from '../db/users.js';
 import { createUser, fetchUser, verifyPW } from '../services/user.js';
 import { createSession } from '../services/session.js'
 import { AppError } from '../errors/AppError.js';
@@ -19,7 +18,8 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.email(),
   password: z.string().min(8),
-  device: z.string()
+  device: z.string(),
+  ip: z.string().max(45)
 });
 
 const jwtSecret = fs.readFileSync(process.env.JWT_SECRET_FILE!, 'utf-8').trim();
@@ -27,7 +27,7 @@ const jwtSecret = fs.readFileSync(process.env.JWT_SECRET_FILE!, 'utf-8').trim();
 export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = registerSchema.parse(req.body);
-    const created = await createUser(validated);
+    await createUser(validated);
 
     res.status(201).json({
       message: 'User registered successfully'
@@ -60,7 +60,7 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
-    createSession(user.id, refresh, validated.device);
+    createSession(user.id, refresh, validated.device, validated.ip);
 
     const access = jwt.sign(
       { id: user.id, role: user.role },
@@ -75,8 +75,17 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
   }
 }
 
-export const logoutUser = (req: Request, res: Response) => {
+export const logoutUser = (req: Request, res: Response, next: NextFunction) => {
   res.status(200).json({
     message: 'User logged out successfully'
   });
+}
+
+export const refreshToken = (req: Request, res: Response, next: NextFunction) => {
+  try {
+
+  }
+  catch (error) {
+    next(error);
+  }
 }

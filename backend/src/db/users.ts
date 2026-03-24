@@ -1,7 +1,8 @@
-import { pgTable, unique, date, varchar, uuid, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
+import { pgTable, unique, date, varchar, uuid, timestamp, text } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-
-export const roleEnum = pgEnum('role', ['team member', 'manager', 'admin']);
+import { roleEnum } from "./enums.ts";
+import { orgs } from "./orgs.ts";
+import { teams } from "./teams.ts";
 
 export const users = pgTable("users", {
   id: uuid().defaultRandom().primaryKey(),
@@ -9,9 +10,10 @@ export const users = pgTable("users", {
   last: varchar('last_name', { length: 50 }).notNull(),
   dob: date().notNull(),
   email: varchar({ length: 255 }).unique().notNull(),
-  password: varchar({ length: 255 }).notNull(),
+  password: text().notNull(),
   role: roleEnum(),
-  confirmed: boolean().notNull().default(false),
+  org: uuid().notNull().references(() => orgs.id),
+  team: uuid().references(() => teams.id),
   created: timestamp().notNull().defaultNow(),
   login: timestamp("last_login")
 }); 

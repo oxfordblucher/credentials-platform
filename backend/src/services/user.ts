@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { eq } from 'drizzle-orm';
-import users from "../db/users.js";
+import { users } from "../db/users.js";
 import { RegisterUser } from "../types/types.js";
 import bcrypt from 'bcrypt';
 
