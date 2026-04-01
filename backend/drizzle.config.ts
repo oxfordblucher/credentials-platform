@@ -5,7 +5,7 @@ const isProd = process.env.NODE_ENV === "production";
 
 export default defineConfig({
   out: './drizzle',
-  schema: './src/db/**/*.ts',
+  schema: './src/db/schema/index.ts',
   dialect: 'postgresql',
   dbCredentials: {
     host: process.env.DB_HOST!,

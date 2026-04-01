@@ -1,8 +1,6 @@
 import { pgTable, unique, date, varchar, uuid, timestamp, text } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { roleEnum } from "./enums.ts";
-import { orgs } from "./orgs.ts";
-import { teams } from "./teams.ts";
+import { roleEnum } from "./enums.js";
 
 export const users = pgTable("users", {
   id: uuid().defaultRandom().primaryKey(),
@@ -12,8 +10,7 @@ export const users = pgTable("users", {
   email: varchar({ length: 255 }).unique().notNull(),
   password: text().notNull(),
   role: roleEnum(),
-  org: uuid().notNull().references(() => orgs.id),
-  team: uuid().references(() => teams.id),
+  org_id: uuid().notNull(),
   created: timestamp().notNull().defaultNow(),
   login: timestamp("last_login")
 }); 

@@ -1,13 +1,14 @@
 import { pgTable, text, varchar, uuid, timestamp } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
-import { users } from "./users.ts";
 
 export const sessions = pgTable("sessions", {
-  id: uuid().defaultRandom().primaryKey(),
-  userId: uuid().notNull().references(() => users.id),
+  id: uuid().primaryKey(),
+  user_id: uuid().notNull(),
   token: text().notNull(),
-  device: varchar({ length: 512 }),
+  agent: varchar({ length: 512 }),
+  device: varchar({ length: 100 }),
   ip: varchar({ length: 45 }),
   created: timestamp().notNull().defaultNow(),
+  last_used: timestamp().notNull().defaultNow(),
   expiration: timestamp().notNull().default(sql`now() + INTERVAL '7d'`)
 });

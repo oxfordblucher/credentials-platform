@@ -1,16 +1,18 @@
 import express, { Request, Response } from 'express';
-import authRouter from './routes/auth.js';
-import profileRouter from './routes/profile.js';
-import notificationRouter from './routes/notification.js';
-import credentialRouter from './routes/credential.js';
-import sessionRouter from './routes/session.js';
-import setupRouter from './routes/setup.js';
+import authRouter from './routes/auth.rt.js';
+import profileRouter from './routes/profile.rt.js';
+import notificationRouter from './routes/notification.rt.js';
+import credentialRouter from './routes/credential.rt.js';
+import sessionRouter from './routes/session.rt.js';
+import setupRouter from './routes/setup.rt.js';
 import { errorHandler } from './middleware/error.js';
+import cookieParser from 'cookie-parser';
 
 const app = express();
 const port = 3000;
 
 app.use(express.json());
+app.use(cookieParser());
 
 const apiBase = '/api';
 

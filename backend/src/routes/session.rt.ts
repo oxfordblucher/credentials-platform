@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getSessions, revokeSession, revokeOtherSessions, revokeAllSessions } from '../controllers/session.js';
+import { getSessions, revokeSession, revokeOtherSessions, revokeAllSessions } from '../controllers/session.ctrl.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();

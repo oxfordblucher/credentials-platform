@@ -5,11 +5,21 @@ export interface User {
   dob: Date;
   role: string;
   org: string;
-  team: string;
+  team: string | null;
   email: string;
   password: string;
   created: Date;
   login: Date | null;
 }
 
-export type RegisterUser = Pick<User, "first" | "last" | "dob" | "email" | "password" | "role" | "org" | "team">
+export type AccessPayload = Pick<User, 'id' | 'role' | 'org' | 'team'> & {
+  iat: number;
+  exp: number;
+}
+
+export interface RefreshPayload {
+  user: string;
+  session: string;
+  iat: number;
+  exp: number;
+}

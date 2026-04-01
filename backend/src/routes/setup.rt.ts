@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createOrganization, createInvite, refreshInvite } from "../controllers/setup.js";
+import { createOrganization, createInvite, refreshInvite } from "../controllers/setup.ctrl.js";
 import { authenticate, authorize } from "../middleware/auth.js";
 
 const router = Router();

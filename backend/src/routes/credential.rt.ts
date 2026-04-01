@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { getCredentials, addCredential, verifyCredential } from "../controllers/credential.js";
+import { getCredentials, addCredential, verifyCredential } from "../controllers/credential.ctrl.js";
 
 const router = Router();
 
