@@ -1,13 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
 
-export const createOrganization = (req: Request, res: Response, next: NextFunction) => {
+export const createOrganization = async (req: Request, res: Response, next: NextFunction) => {
+  try {
 
+  }
+  catch (error) {
+    next(error);
+  }
 }
 
-export const createInvite = (req: Request, res: Response, next: NextFunction) => {
+export const createInvite = async (req: Request, res: Response, next: NextFunction) => {
+  try {
 
+  }
+  catch (error) {
+    next(error);
+  }
 }
 
-export const refreshInvite = (req: Request, res: Response, next: NextFunction) => {
+export const refreshInvite = async (req: Request, res: Response, next: NextFunction) => {
+  try {
 
+  }
+  catch (error) {
+    next(error);
+  }
 }

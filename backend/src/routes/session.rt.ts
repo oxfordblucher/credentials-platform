@@ -6,8 +6,8 @@ const router = Router();
 router.use(authenticate);
 
 router.get('/', getSessions);
-router.delete('/:id', revokeSession);
-router.delete('/other', revokeOtherSessions);
 router.delete('/', revokeAllSessions);
+router.delete('/other', revokeOtherSessions);
+router.delete('/:id', revokeSession);
 
 export default router;

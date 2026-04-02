@@ -1,13 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
 
-export const getCredentials = (req: Request, res: Response, next: NextFunction) => {
+export const getCredentials = async (req: Request, res: Response, next: NextFunction) => {
+  try {
 
+  }
+  catch (error) {
+    next(error);
+  }
 }
 
-export const addCredential = (req: Request, res: Response, next: NextFunction) => {
+export const addCredential = async (req: Request, res: Response, next: NextFunction) => {
+  try {
 
+  }
+  catch (error) {
+    next(error);
+  }
 }
 
-export const verifyCredential = (req: Request, res: Response, next: NextFunction) => {
-  
+export const verifyCredential = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+
+  }
+  catch (error) {
+    next(error);
+  }
 }

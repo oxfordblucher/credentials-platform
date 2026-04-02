@@ -6,7 +6,7 @@ export const registerSchema = z.object({
   dob: z.preprocess((val: unknown) => new Date(val as string), z.date()),
   email: z.email(),
   password: z.string().min(8),
-  role: z.string().regex(/^(admin|manager|team member)$/)
+  role: z.string().regex(/^(admin|manager|member)$/)
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>

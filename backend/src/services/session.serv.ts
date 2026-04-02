@@ -3,14 +3,17 @@ import { sessions, users, teamMembers } from "../db/schema/index.js";
 import { UAParser } from 'ua-parser-js';
 import { db } from "../db/index.js";
 import { hashToken } from "../utils/token.js";
+import { AppError } from "../errors/AppError.js";
+import { Transaction } from '../types/types.js';
 
 const parseDeviceInfo = (agent: string) => {
+  if (agent === "unknown") return "Unknown device";
   const {browser, os, device} = UAParser(agent);
   return `${device.vendor} ${device.model}, ${os.name}, ${browser.name}`;
 }
 
-export const createSession = async (id: string, user: string, token: string, agent: string, ip: string) => {
-  await db.insert(sessions).values({
+export const createSession = async (tx: Transaction, id: string, user: string, token: string, agent: string, ip: string) => {
+  const result = await db.insert(sessions).values({
     id: id,
     user_id: user,
     token: hashToken(token),
@@ -18,19 +21,21 @@ export const createSession = async (id: string, user: string, token: string, age
     device: parseDeviceInfo(agent),
     ip: ip
   });
+
+  if (!result.rowCount) throw new AppError(404, "Session creation failed");
 }
 
 export const fetchSessions = async (userId: string) => {
-  const activeSessions = await db.select({
+  const result = await db.select({
     device: sessions.device,
     ip: sessions.ip,
     lastUsed: sessions.last_used
   }).from(sessions).where(eq(sessions.user_id, userId));
 
-  return activeSessions;
+  return result;
 }
 
-export const deleteSessions = async (userId: string, options?: { exclude?: string, specificId?: string}): Promise<number> => {
+export const deleteSessions = async (userId: string, options?: { exclude?: string, specificId?: string}) => {
   const conditions = [eq(sessions.user_id, userId)];
 
   if (options?.exclude) {
@@ -40,7 +45,7 @@ export const deleteSessions = async (userId: string, options?: { exclude?: strin
   }
 
   const result = await db.delete(sessions).where(and(...conditions));
-  return result.rowCount ?? 0;
+  if (!result.rowCount) throw new AppError(404, "Session not found");
 }
 
 export const fetchSessionInfo = async (userId: string, sessionId: string) => {
@@ -49,7 +54,8 @@ export const fetchSessionInfo = async (userId: string, sessionId: string) => {
     role: users.role,
     org: users.org_id,
     team: teamMembers.team_id,
-    session: sessions.id
+    session: sessions.id,
+    token: sessions.token
   }).from(users)
   .innerJoin(sessions, eq(users.id, sessions.user_id))
   .leftJoin(teamMembers, eq(users.id, teamMembers.user_id))
@@ -60,11 +66,11 @@ export const fetchSessionInfo = async (userId: string, sessionId: string) => {
 }
 
 export const updateSession = async (userId: string, sessionId: string, hash: string) => {
-  const sessionUpdate = await db.update(sessions).set({
+  const result = await db.update(sessions).set({
     token: hash,
     last_used: sql`NOW()`,
     expiration: sql`NOW() + INTERVAL '7d'`
   }).where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
 
-  return sessionUpdate.rowCount ?? 0;
+  if (!result.rowCount) throw new AppError(404, "Session not found");
 }
