@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 
 export const getSessions = (req: Request, res: Response, next: NextFunction) => {
 

@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { users } from "../db/schema/index.js";
+import { teamMembers, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import bcrypt from 'bcrypt';
 import { RegisterInput, LoginInput } from '../utils/zod.js';
@@ -27,8 +27,8 @@ export const fetchUser = async (email: string) => {
     hash: users.password,
     role: users.role,
     org: users.org_id,
-    team: users.team_id
-  }).from(users).where(eq(users.email, email)).limit(1);
+    team: teamMembers.team_id
+  }).from(users).leftJoin(teamMembers, eq(users.id, teamMembers.team_id)).where(eq(users.email, email)).limit(1);
 
   return fetched ?? null;
 }
@@ -37,7 +37,7 @@ export const verifyPW = async (input: string, hashed: string) => {
   return bcrypt.compare(input, hashed);
 }
 
-export const login = async (credentials: LoginInput) => {
+export const login = async (credentials: LoginInput, agent: string, ip: string) => {
   const user = await fetchUser(credentials.email);
   if (!user) throw new AppError(404, 'User not found');
 
@@ -46,7 +46,7 @@ export const login = async (credentials: LoginInput) => {
 
   const sessionId = genUUID();
   const refresh = signRefreshToken(user.id, sessionId);
-  await createSession(sessionId, user.id, refresh, credentials.agent, credentials.ip);
+  await createSession(sessionId, user.id, refresh, agent, ip);
 
   const access = signAccessToken({
     id: user.id,
@@ -58,7 +58,7 @@ export const login = async (credentials: LoginInput) => {
   return { access, refresh };
 }
 
-export const refresh = async (token: string) => {
+export const refresh = async (token: string): Promise<{ newAccess: string; newRefresh: string; }> => {
   if (!token) throw new AppError(401, "No refresh token found");
   const decoded = verifyRefresh(token);
   const confirmed = await fetchSessionInfo(decoded.user, decoded.session);

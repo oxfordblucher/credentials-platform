@@ -1,21 +1,18 @@
-import { drizzle } from "drizzle-orm/node-postgres";
 import { eq, ne, and, sql } from "drizzle-orm";
-import { sessions, users } from "../db/schema/index.js";
+import { sessions, users, teamMembers } from "../db/schema/index.js";
 import { UAParser } from 'ua-parser-js';
 import { db } from "../db/index.js";
-import { genUUID, hashToken } from "../utils/token.js";
+import { hashToken } from "../utils/token.js";
 
 const parseDeviceInfo = (agent: string) => {
   const {browser, os, device} = UAParser(agent);
-  return `${device.name}, ${os.name}, ${browser.name}`;
+  return `${device.vendor} ${device.model}, ${os.name}, ${browser.name}`;
 }
 
 export const createSession = async (id: string, user: string, token: string, agent: string, ip: string) => {
-  const sessionId = genUUID();
-
   await db.insert(sessions).values({
-    id: sessionId,
-    user_id: id,
+    id: id,
+    user_id: user,
     token: hashToken(token),
     agent: agent,
     device: parseDeviceInfo(agent),
@@ -34,32 +31,39 @@ export const fetchSessions = async (userId: string) => {
 }
 
 export const deleteSessions = async (userId: string, options?: { exclude?: string, specificId?: string}): Promise<number> => {
-  let query = db.delete(sessions).where(eq(sessions.user_id, userId));
+  const conditions = [eq(sessions.user_id, userId)];
 
   if (options?.exclude) {
-    query = query.where(ne(sessions.id, options.exclude));
+    conditions.push(ne(sessions.id, options.exclude));
   } else if (options?.specificId) {
-    query = query.where(eq(sessions.id, options.specificId));
+    conditions.push(eq(sessions.id, options.specificId));
   }
 
-  const result = await query;
+  const result = await db.delete(sessions).where(and(...conditions));
   return result.rowCount ?? 0;
 }
 
 export const fetchSessionInfo = async (userId: string, sessionId: string) => {
-  const sessionInfo = await db.select({
+  const [sessionInfo] = await db.select({
     user: users.id,
     role: users.role,
-    org: users.org,
-    team: users.team,
+    org: users.org_id,
+    team: teamMembers.team_id,
     session: sessions.id
-  }).from(sessions).leftJoin(users, eq(users.id, sessions.user_id).limit(1));
+  }).from(users)
+  .innerJoin(sessions, eq(users.id, sessions.user_id))
+  .leftJoin(teamMembers, eq(users.id, teamMembers.user_id))
+  .where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
+  .limit(1);
+
+  return sessionInfo;
 }
 
 export const updateSession = async (userId: string, sessionId: string, hash: string) => {
   const sessionUpdate = await db.update(sessions).set({
     token: hash,
     last_used: sql`NOW()`
-  }).where(and(eq(sessions.user_id, userId))).where(eq(sessions.id, sessionId))
+  }).where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
+
   return sessionUpdate.rowCount ?? 0;
 }

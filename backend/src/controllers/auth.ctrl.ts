@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { createUser, login } from '../services/auth.serv.js';
+import { createUser, login, refresh } from '../services/auth.serv.js';
 import { registerSchema, loginSchema } from '../utils/zod.js';
 import { setTokenCookies } from '../utils/token.js';
 
@@ -20,6 +20,8 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
 export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const validated = loginSchema.parse(req.body);
+    const agent = req.headers['user-agent'];
+    const ip = req.ip;
     const { access, refresh } = await login(validated);
 
     setTokenCookies(res, access, refresh);
@@ -36,11 +38,11 @@ export const logoutUser = (req: Request, res: Response, next: NextFunction) => {
   });
 }
 
-export const refreshTokens = (req: Request, res: Response, next: NextFunction) => {
+export const refreshTokens = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies?.refreshToken;
-    const { access, refresh } = await refresh(token);
-    setTokenCookies(res, access, refresh);
+    const { newAccess, newRefresh } = await refresh(token);
+    setTokenCookies(res, newAccess, newRefresh);
     res.status(200).json({ message: 'Tokens refreshed' });
   }
   catch (error) {

@@ -1,4 +1,5 @@
 import { pgTable, varchar, timestamp, boolean, uuid, text } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { roleEnum } from "./enums.js";
 
 export const invites = pgTable("invites", {

@@ -13,9 +13,7 @@ export type RegisterInput = z.infer<typeof registerSchema>
 
 export const loginSchema = z.object({
   email: z.email(),
-  password: z.string().min(8),
-  agent: z.string(),
-  ip: z.string().max(45)
+  password: z.string().min(8)
 });
 
 export type LoginInput = z.infer<typeof loginSchema>

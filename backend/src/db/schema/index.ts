@@ -52,7 +52,7 @@ const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, c
   },
   teamCredentials: {
     team: r.one.teams({
-      from: r.teamCredentials.org_id,
+      from: r.teamCredentials.team_id,
       to: r.teams.id
     }),
     cred: r.one.credentials({
