@@ -62,7 +62,8 @@ export const fetchSessionInfo = async (userId: string, sessionId: string) => {
 export const updateSession = async (userId: string, sessionId: string, hash: string) => {
   const sessionUpdate = await db.update(sessions).set({
     token: hash,
-    last_used: sql`NOW()`
+    last_used: sql`NOW()`,
+    expiration: sql`NOW() + INTERVAL '7d'`
   }).where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
 
   return sessionUpdate.rowCount ?? 0;

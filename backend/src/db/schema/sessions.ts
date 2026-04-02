@@ -10,5 +10,5 @@ export const sessions = pgTable("sessions", {
   ip: varchar({ length: 45 }),
   created: timestamp().notNull().defaultNow(),
   last_used: timestamp().notNull().defaultNow(),
-  expiration: timestamp().notNull().default(sql`now() + INTERVAL '7d'`)
+  expiration: timestamp().notNull().default(sql`NOW() + INTERVAL '7d'`)
 });
