@@ -4,7 +4,9 @@ import profileRouter from './routes/profile.rt.js';
 import notificationRouter from './routes/notification.rt.js';
 import credentialRouter from './routes/credential.rt.js';
 import sessionRouter from './routes/session.rt.js';
-import setupRouter from './routes/setup.rt.js';
+import teamRouter from './routes/team.rt.js';
+import orgRouter from './routes/org.rt.js';
+import inviteRouter from './routes/invite.rt.js';
 import { errorHandler } from './middleware/error.js';
 import cookieParser from 'cookie-parser';
 
@@ -21,7 +23,8 @@ app.use(apiBase + '/profile', profileRouter);
 app.use(apiBase + '/notification', notificationRouter);
 app.use(apiBase + '/credential', credentialRouter);
 app.use(apiBase + '/session', sessionRouter);
-app.use(apiBase + '/setup', setupRouter);
+app.use(apiBase + '/team', teamRouter);
+app.use(apiBase + '/org', orgRouter);
 
 app.get(apiBase + '/health', (req: Request, res: Response) => {
     res.status(200).json({

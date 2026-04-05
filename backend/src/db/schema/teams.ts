@@ -7,7 +7,8 @@ export const teams = pgTable("teams", {
   manager_id: uuid(),
   name: varchar({ length: 100 }),
   description: text(),
-  created: timestamp().notNull().defaultNow()
+  created: timestamp().notNull().defaultNow(),
+  deleted: timestamp()
 });
 
 export const teamMembers = pgTable("team_members", {
@@ -16,3 +17,5 @@ export const teamMembers = pgTable("team_members", {
   role: roleEnum().notNull(),
   joined: timestamp().notNull().defaultNow()
 }, (t) => [primaryKey({ columns: [t.user_id, t.team_id] })]);
+
+export type NewTeam = typeof teams.$inferInsert;

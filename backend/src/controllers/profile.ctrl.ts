@@ -5,6 +5,7 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
   try {
     const id = req.params.id ?? req.user!.id;
     const profile = await fetchProfile(id);
+    
     res.status(200).json({
       profile: profile
     });

@@ -8,28 +8,38 @@ import { verifyRefresh, signRefreshToken, signAccessToken, genUUID, hashToken } 
 import { AppError, TokenReuseError } from '../errors/AppError.js';
 import { Transaction } from '../types/types.js';
 
-export const createUser = async (userData: RegisterInput) => {
+export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
   // Hash the password
-  const hashedPassword = await bcrypt.hash(userData.password, 10);
-  const result = await db.insert(users).values({
-    ...userData,
-    password: hashedPassword
-  }).returning({
-    id: users.id,
-    email: users.email
-  });
+  const { team, role, password, ...rest } = userData;
+  const hashedPassword = await bcrypt.hash(password, 10);
+  const newUser = async (tx: Transaction) => {
+    const [user] = await tx.insert(users).values({
+      ...rest,
+      password: hashedPassword
+    }).returning({
+      id: users.id
+    });
 
-  if (!result.rowCount) throw new AppError(404, "Account creation failed");
+    if (team && role) {
+      await tx.insert(teamMembers).values({
+        user_id: user.id,
+        team_id: team,
+        role: role
+      });
+    }
+
+    return user;
+  }
+
+  return tx ? newUser(tx) : db.transaction(newUser);
 }
 
 export const fetchAuthUser = async (email: string) => {
   const [fetched] = await db.select({
     id: users.id,
     hash: users.password,
-    role: users.role,
-    org: users.org_id,
-    team: teamMembers.team_id
-  }).from(users).leftJoin(teamMembers, eq(users.id, teamMembers.user_id)).where(eq(users.email, email)).limit(1);
+    org: users.org_id
+  }).from(users).where(eq(users.email, email)).limit(1);
 
   return fetched ?? null;
 }
@@ -55,9 +65,7 @@ export const login = async (credentials: LoginInput, agent: string, ip: string) 
 
   const access = signAccessToken({
     id: user.id,
-    role: user.role,
     org: user.org,
-    team: user.team,
     session: sessionId
   });
 
@@ -76,9 +84,7 @@ export const refresh = async (token: string): Promise<{ newAccess: string; newRe
   const newRefresh = signRefreshToken(confirmed.user, confirmed.session);
   const newAccess = signAccessToken({
     id: confirmed.user,
-    role: confirmed.role,
     org: confirmed.org,
-    team: confirmed.team,
     session: confirmed.session
   });
   await updateSession(confirmed.user, confirmed.session, hashToken(newRefresh));

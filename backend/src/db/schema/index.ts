@@ -6,7 +6,7 @@ import { sessions } from './sessions.js';
 import { credentials, teamCredentials, userCredentials } from './credentials.js';
 import { invites } from './invites.js';
 
-const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentials, teamCredentials, userCredentials, invites }, (r) => ({
+export const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentials, teamCredentials, userCredentials, invites }, (r) => ({
   users: {
     org: r.one.orgs({
       from: r.users.org_id,
@@ -90,4 +90,9 @@ const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, c
   }
 }));
 
-export { users, teams, teamMembers, orgs, sessions, credentials, teamCredentials, userCredentials, invites, relations };
+export * from './users.js';
+export * from './teams.js';
+export * from './orgs.js';
+export * from './sessions.js';
+export * from './credentials.js';
+export * from './invites.js';

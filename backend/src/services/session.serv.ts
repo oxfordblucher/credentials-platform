@@ -51,14 +51,11 @@ export const deleteSessions = async (userId: string, options?: { exclude?: strin
 export const fetchSessionInfo = async (userId: string, sessionId: string) => {
   const [sessionInfo] = await db.select({
     user: users.id,
-    role: users.role,
     org: users.org_id,
-    team: teamMembers.team_id,
     session: sessions.id,
     token: sessions.token
   }).from(users)
   .innerJoin(sessions, eq(users.id, sessions.user_id))
-  .leftJoin(teamMembers, eq(users.id, teamMembers.user_id))
   .where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
   .limit(1);
 

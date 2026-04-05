@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { deleteSessions, fetchSessions } from '../services/session.serv.js';
-import { clearTokenCookies } from '../utils/token.js';
+import { clearTokenCookie } from '../utils/token.js';
 
 export const getSessions = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -51,7 +51,7 @@ export const revokeAllSessions = async (req: Request, res: Response, next: NextF
     const { id } = req.user!;
     await deleteSessions(id);
 
-    clearTokenCookies(res);
+    clearTokenCookie(res);
 
     res.status(200).json({
       message: "All sessions revoked successfully"

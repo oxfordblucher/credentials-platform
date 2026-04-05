@@ -11,4 +11,6 @@ export const users = pgTable("users", {
   is_admin: boolean().default(false),
   created: timestamp().notNull().defaultNow(),
   login: timestamp("last_login")
-}); 
+});
+
+export type NewUser = typeof users.$inferInsert;

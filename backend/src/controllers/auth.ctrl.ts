@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { createUser, login, refresh } from '../services/auth.serv.js';
 import { registerSchema, loginSchema } from '../utils/zod.js';
-import { clearTokenCookies, setTokenCookies } from '../utils/token.js';
+import { clearTokenCookie, setTokenCookie } from '../utils/token.js';
 import { TokenMissingError, TokenReuseError } from '../errors/AppError.js';
 import { deleteSessions } from '../services/session.serv.js';
 
@@ -12,7 +12,7 @@ export const registerUser = async (req: Request, res: Response, next: NextFuncti
 
     res.status(201).json({
       message: 'User registered successfully'
-    })
+    });
   }
   catch (error) {
     next(error);
@@ -26,8 +26,11 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
     const ip = req.ip ?? 'unknown';
     const { access, refresh } = await login(validated, agent, ip);
 
-    setTokenCookies(res, access, refresh);
-    res.status(200).json({ message: 'Logged in successfully' });
+    setTokenCookie(res, refresh);
+    res.status(200).json({
+      message: 'Logged in successfully',
+      token: access
+    });
   }
   catch (error) {
     next(error);
@@ -39,8 +42,7 @@ export const logoutUser = async (req: Request, res: Response, next: NextFunction
     const { id, session } = req.user!;
     await deleteSessions(id, { specificId: session });
 
-    clearTokenCookies(res);
-
+    clearTokenCookie(res);
     res.status(200).json({
       message: 'User logged out successfully'
     });
@@ -54,14 +56,17 @@ export const refreshTokens = async (req: Request, res: Response, next: NextFunct
   try {
     const token = req.cookies?.refreshToken;
     if (!token) throw new TokenMissingError();
-
     const { newAccess, newRefresh } = await refresh(token);
-    setTokenCookies(res, newAccess, newRefresh);
-    res.status(200).json({ message: 'Tokens refreshed' });
+
+    setTokenCookie(res, newRefresh);
+    res.status(200).json({
+      message: 'Tokens refreshed',
+      token: newAccess
+    });
   }
   catch (error) {
     if (error instanceof TokenMissingError || error instanceof TokenReuseError) {
-      clearTokenCookies(res);
+      clearTokenCookie(res);
     }
     next(error)
   }

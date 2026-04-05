@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { readFileSync } from "fs";
 import { Response } from 'express';
-import { AccessPayload, RefreshPayload, User } from '../types/types.js';
+import { AccessPayload, RefreshPayload } from '../types/types.js';
 import crypto from 'crypto';
 
 const jwtSecrets = JSON.parse(readFileSync(process.env.JWT_SECRET_FILE!, 'utf-8'));
@@ -24,9 +24,9 @@ export const signRefreshToken = (userId: string, sessionId: string) => {
   );
 }
 
-export const signAccessToken = (user: Pick<User, 'id' | 'role' | 'org' | 'team'> & {session: string}) => {
+export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'org'> & {session: string}) => {
   return jwt.sign(
-    { id: user.id, role: user.role, org: user.org, team: user.team, session: user.session },
+    { id: user.id, org: user.org, session: user.session },
     accessSecret,
     { expiresIn: '15m' }
   );
@@ -40,14 +40,7 @@ export const verifyRefresh = (token: string): RefreshPayload => {
   return jwt.verify(token, refreshSecret);
 }
 
-export const setTokenCookies = (res: Response, access: string, refresh: string) => {
-  res.cookie('accessToken', access, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'strict',
-    maxAge: 15 * 60 * 1000
-  });
-
+export const setTokenCookie = (res: Response, refresh: string) => {
   res.cookie('refreshToken', refresh, {
     httpOnly: true,
     secure: true,
@@ -57,7 +50,6 @@ export const setTokenCookies = (res: Response, access: string, refresh: string) 
   });
 }
 
-export const clearTokenCookies = (res: Response) => {
-  res.clearCookie('accessToken');
+export const clearTokenCookie = (res: Response) => {
   res.clearCookie('refreshToken', { path: '/auth/refresh' });
 }

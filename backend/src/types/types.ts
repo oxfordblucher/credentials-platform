@@ -1,20 +1,8 @@
 import { db } from '../db/index.js';
 
-export interface User {
+export type AccessPayload = {
   id: string;
-  first: string;
-  last: string;
-  dob: Date;
-  role: 'admin' | 'manager' | 'member';
   org: string;
-  team: string | null;
-  email: string;
-  password: string;
-  created: Date;
-  login: Date | null;
-}
-
-export type AccessPayload = Pick<User, 'id' | 'role' | 'org' | 'team'> & {
   sessionId: string;
   iat: number;
   exp: number;
@@ -35,7 +23,13 @@ export interface SessionInfo {
   sessionId: string;
 }
 
-export type ProfileRow = Pick<User, 'id' | 'first' | 'last' | 'dob' | 'email' | 'org'> & {
+export type ProfileRow = {
+  id: string;
+  first: string;
+  last: string;
+  dob: Date;
+  email: string;
+  org: string;
   isAdmin: boolean;
   role: string | null;
   team: string | null;
