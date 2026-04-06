@@ -1,17 +1,17 @@
 import { eq, sql } from 'drizzle-orm';
 import { teamMembers, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
-import bcrypt from 'bcrypt';
 import { RegisterInput, LoginInput } from '../utils/zod.js';
 import { createSession, deleteSessions, fetchSessionInfo, updateSession } from './session.serv.js'
 import { verifyRefresh, signRefreshToken, signAccessToken, genUUID, hashToken } from '../utils/token.js';
+import { encryptPW, verifyPW } from '../utils/encrypt.js';
 import { AppError, TokenReuseError } from '../errors/AppError.js';
 import { Transaction } from '../types/types.js';
 
 export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
   // Hash the password
   const { team, role, password, ...rest } = userData;
-  const hashedPassword = await bcrypt.hash(password, 10);
+  const hashedPassword = await encryptPW(password);
   const newUser = async (tx: Transaction) => {
     const [user] = await tx.insert(users).values({
       ...rest,
@@ -42,10 +42,6 @@ export const fetchAuthUser = async (email: string) => {
   }).from(users).where(eq(users.email, email)).limit(1);
 
   return fetched ?? null;
-}
-
-export const verifyPW = async (input: string, hashed: string) => {
-  return bcrypt.compare(input, hashed);
 }
 
 export const login = async (credentials: LoginInput, agent: string, ip: string) => {

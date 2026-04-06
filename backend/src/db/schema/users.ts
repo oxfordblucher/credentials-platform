@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   last: varchar('last_name', { length: 50 }).notNull(),
   dob: date().notNull(),
   email: varchar({ length: 255 }).unique().notNull(),
+  pending_email: varchar({ length: 255 }).unique(),
   password: text().notNull(),
   org_id: uuid().notNull(),
   is_admin: boolean().default(false),

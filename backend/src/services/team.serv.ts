@@ -1,5 +1,6 @@
-import { teams, users, teamMembers } from "../db/schema/index.js";
+import { teamMembers } from "../db/schema/index.js";
 import { db } from "../db/index.js";
+import { sql, and, eq } from "drizzle-orm";
 
 export const fetchStaff = async (id: string) => {
   const result = await db.query.teams.findMany({
@@ -26,4 +27,24 @@ export const fetchStaff = async (id: string) => {
   });
 
   return result;
+}
+
+export const addMember = async (team: string, user: string) => {
+  const [result] = await db.insert(teamMembers).values({
+    team_id: team,
+    user_id: user,
+    role: 'member',
+    joined: sql`now()`
+  }).returning();
+
+  return result ?? null;
+}
+
+export const deleteMember = async (team: string, user: string) => {
+  const [result] = await db.delete(teamMembers).where(and(
+    eq(teamMembers.team_id, team),
+    eq(teamMembers.user_id, user)
+  )).returning({ deleted: teamMembers.user_id });
+
+  return result ?? null;
 }

@@ -1,45 +1,92 @@
 import { db } from "../db/index.js";
-import { teamMembers, teams, orgs, users } from "../db/schema/index.js";
+import { sessions, users, NewUser } from "../db/schema/index.js";
 import { eq } from "drizzle-orm";
-import { ProfileRow } from "../types/types.js";
+import { AppError } from "../errors/AppError.js";
+import { Transaction } from "../types/types.js";
+import { encryptPW, verifyPW } from "../utils/encrypt.js";
+import { deleteSessions } from "./session.serv.js";
 
 export const fetchProfile = async (userId: string) => {
-  const rows: ProfileRow[] = await db.select({
-    id: users.id,
-    first: users.first,
-    last: users.last,
-    dob: users.dob,
-    email: users.email,
-    role: teamMembers.role,
-    org: orgs.name,
-    isAdmin: users.is_admin,
-    team: teams.name
-  }).from(users)
-  .innerJoin(orgs, eq(users.org_id, orgs.id))
-  .leftJoin(teamMembers, eq(users.id, teamMembers.user_id))
-  .leftJoin(teams, eq(teamMembers.team_id, teams.id))
-  .where(eq(users.id, userId));
-
-  if (rows.length === 0) return null;
-
-  const userTeams = rows
-    .flatMap(r => r.team && r.role
-      ? [{name: r.team, role: r.role}] : []
-    );
-
-  const result = {
-    first: rows[0].first,
-    last: rows[0].last,
-    dob: rows[0].dob,
-    email: rows[0].email,
-    org: rows[0].org,
-    isAdmin: rows[0].isAdmin,
-    teams: userTeams
-  };
+  const result = await db.query.users.findFirst({
+    where: {
+      id: userId
+    },
+    columns: {
+      id: true,
+      first: true,
+      last: true,
+      dob: true,
+      email: true,
+      isAdmin: true
+    },
+    with: {
+      org: {
+        columns: {
+          id: true,
+          name: true
+        }
+      },
+      memberships: {
+        columns: {
+          role: true
+        },
+        with: {
+          team: {
+            columns: {
+              id: true,
+              name: true
+            }
+          }
+        }
+      }
+    }
+  });
 
   return result;
 }
 
-export const editProfile = async (userId: string, field: string, input: string) => {
-  
+export const updateEmail = async (userId: string, email: string) => {
+  const existing = await db.user.findFirst({
+    where: {
+      OR: [
+        { email: email },
+        { pending_email: email }
+      ]
+    }
+  });
+
+  if (existing) throw new AppError(409, "Email already in use");
+
+  const [result] = await db.update(users).set({ 
+    pending_email: email
+  }).where(eq(users.id, userId)).returning({ newEmail: users.pending_email });
+
+  return result;
+}
+
+export const updateName = async (userId: string, name: { first?: string, last?: string }) => {
+  const updates: Partial<NewUser> = {};
+  if (name.first) updates.first = name.first;
+  if (name.last) updates.last = name.last;
+
+  const [result] = await db.update(users).set(updates)
+    .where(eq(users.id, userId)).returning({
+      newFirst: users.first, newLast: users.last
+    });
+
+  return result;
+}
+
+export const updatePassword = async (userId: string, password: string, newPass: string) => {
+  const [user] = await db.select({ password: users.password }).from(users).where(eq(users.id, userId));
+  if (!user) throw new AppError(404, "User not found");
+
+  const isValid = await verifyPW(password, user.password);
+  if (!isValid) throw new AppError(401, "Invalid password");
+
+  const hashedPassword = await encryptPW(newPass);
+  await db.transaction(async (tx: Transaction) => {
+    await tx.update(users).set({ password: hashedPassword }).where(eq(users.id, userId));
+    await deleteSessions(userId, undefined, tx);
+  })
 }

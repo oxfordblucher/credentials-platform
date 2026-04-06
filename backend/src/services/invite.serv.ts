@@ -2,7 +2,6 @@ import { invites } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { InviteInput } from "../utils/zod.js";
 import { eq, sql } from "drizzle-orm";
-import { AppError } from "../errors/AppError.js";
 
 export const createInvites = async (invite: InviteInput, senderId: string) => {
   const result = await db.insert(invites).values({
@@ -22,7 +21,7 @@ export const fetchInvites = async (id: string) => {
     id: invites.id,
     email: invites.email,
     expiration: invites.expiration
-  }).from(invites);
+  }).from(invites).where(eq(invites.inviter_id, id));
 
   return result;
 }
@@ -32,11 +31,11 @@ export const updateInvite = async (id: string) => {
     expiration: sql`now() + INTERVAL '7d'`
   }).where(eq(invites.id, id));
   
-  if (!result.rowCount) throw new AppError(404, 'Invite renewal failed')
+  return result.rowCount > 0;
 }
 
 export const deleteInvite = async (id: string) => {
   const result = await db.delete(invites).where(eq(invites.id, id));
 
-  if (!result.rowCount) throw new AppError(404, "Invite not deleted");
+  return result.rowCount > 0;
 }

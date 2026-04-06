@@ -12,7 +12,8 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       from: r.users.org_id,
       to: r.orgs.id,
       optional: false
-    })
+    }),
+    memberships: r.many.teamMembers()
   },
   teams: {
     manager: r.one.users({

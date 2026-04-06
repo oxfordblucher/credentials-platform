@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { editProfile, fetchProfile } from '../services/user.serv.js';
+import { fetchProfile, updateEmail, updateName, updatePassword } from '../services/user.serv.js';
 
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -15,13 +15,14 @@ export const getProfile = async (req: Request, res: Response, next: NextFunction
   }
 }
 
-export const updateEmail = async (req: Request, res: Response, next: NextFunction) => {
+export const editEmail = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.user!;
-    const { field, input } = req.body;
-    await editProfile(id, field, input);
+    const { email } = req.body;
+    const newEmail = await updateEmail(id, email);
     res.status(200).json({
-      message: "Edit completed successfully"
+      message: "Email changed successfully",
+      email: newEmail
     });
   }
   catch (error) {
@@ -29,27 +30,27 @@ export const updateEmail = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
-export const updateName = async (req: Request, res: Response, next: NextFunction) => {
+export const editName = async (req: Request, res: Response, next: NextFunction) => {
   try {
-
+    const { id } = req.user!;
+    const { first, last } = req.body;
+    const newName = await updateName(id, { first: first, last: last });
+    res.status(200).json({
+      message: "Name changed successfully",
+      first: newName.first,
+      last: newName.last
+    })
   }
   catch (error) {
     next(error);
   }
 }
 
-export const updatePassword = async (req: Request, res: Response, next: NextFunction) => {
+export const editPassword = async (req: Request, res: Response, next: NextFunction) => {
   try {
-
-  }
-  catch (error) {
-    next(error);
-  }
-}
-
-export const deleteProfile = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-
+    const { id } = req.user!;
+    const { password, newPass } = req.body;
+    await updatePassword(id, password, newPass);
   }
   catch (error) {
     next(error);

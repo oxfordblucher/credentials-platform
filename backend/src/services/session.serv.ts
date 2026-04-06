@@ -3,7 +3,6 @@ import { sessions, users, teamMembers } from "../db/schema/index.js";
 import { UAParser } from 'ua-parser-js';
 import { db } from "../db/index.js";
 import { hashToken } from "../utils/token.js";
-import { AppError } from "../errors/AppError.js";
 import { Transaction } from '../types/types.js';
 
 const parseDeviceInfo = (agent: string) => {
@@ -22,7 +21,7 @@ export const createSession = async (tx: Transaction, id: string, user: string, t
     ip: ip
   });
 
-  if (!result.rowCount) throw new AppError(404, "Session creation failed");
+  return result.rowCount > 0;
 }
 
 export const fetchSessions = async (userId: string) => {
@@ -35,17 +34,21 @@ export const fetchSessions = async (userId: string) => {
   return result;
 }
 
-export const deleteSessions = async (userId: string, options?: { exclude?: string, specificId?: string}) => {
-  const conditions = [eq(sessions.user_id, userId)];
+export const deleteSessions = async (userId: string, options?: { exclude?: string, specificId?: string }, tx?: Transaction) => {
+  const exec = async (tx: Transaction) => {
+    const conditions = [eq(sessions.user_id, userId)];
 
-  if (options?.exclude) {
-    conditions.push(ne(sessions.id, options.exclude));
-  } else if (options?.specificId) {
-    conditions.push(eq(sessions.id, options.specificId));
+    if (options?.exclude) {
+      conditions.push(ne(sessions.id, options.exclude));
+    } else if (options?.specificId) {
+      conditions.push(eq(sessions.id, options.specificId));
+    }
+
+    const result = await db.delete(sessions).where(and(...conditions));
+    return result.rowCount > 0;
   }
 
-  const result = await db.delete(sessions).where(and(...conditions));
-  if (!result.rowCount) throw new AppError(404, "Session not found");
+  return tx ? exec(tx) : db.transaction(exec);
 }
 
 export const fetchSessionInfo = async (userId: string, sessionId: string) => {
@@ -69,5 +72,5 @@ export const updateSession = async (userId: string, sessionId: string, hash: str
     expiration: sql`NOW() + INTERVAL '7d'`
   }).where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
 
-  if (!result.rowCount) throw new AppError(404, "Session not found");
+  return result.rowCount > 0;
 }

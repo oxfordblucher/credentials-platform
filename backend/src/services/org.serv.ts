@@ -2,7 +2,6 @@ import { NewTeam, orgs, teamMembers, teams, users } from "../db/schema/index.js"
 import { db } from "../db/index.js";
 import { SetupInput } from "../utils/zod.js";
 import { Transaction } from "../types/types.js";
-import { AppError } from "../errors/AppError.js";
 import { createUser } from "./auth.serv.js";
 import { eq } from "drizzle-orm";
 
@@ -26,7 +25,7 @@ export const createOrg = async (input: SetupInput) => {
     await tx.update(orgs).set({ admin_id: user.id }).where(eq(orgs.id, org.id));
   });
 
-  if (!result.rowCount) throw new AppError(404, "Setup unsuccessful");
+  return result.rowCount > 0;
 }
 
 export const fetchTeams = async (id: string) => {
@@ -60,9 +59,9 @@ export const fetchTeams = async (id: string) => {
 }
 
 export const createTeam = async (team: NewTeam) => {
-  const result = await db.insert(teams).values(team);
+  const [result] = await db.insert(teams).values(team).returning();
 
-  if (!result.rowCount) throw new AppError(404, "Team not created");
+  return result ?? null;
 }
 
 export const deleteTeam = async (id: string) => {
@@ -71,5 +70,5 @@ export const deleteTeam = async (id: string) => {
     await tx.delete(teamMembers).where(eq(teamMembers.team_id, id));
   });
 
-  if (!result.rowCount) throw new AppError(404, "Team not found");
+  return result.rowCount > 0;
 }

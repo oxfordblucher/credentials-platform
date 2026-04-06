@@ -20,3 +20,5 @@ export const userCredentials = pgTable("user_credentials", {
   verified: timestamp(),
   expiration: timestamp()
 }, (t) => [primaryKey({ columns: [t.user_id, t.credential_id] })]);
+
+export type NewUserCred = typeof userCredentials.$inferInsert;
