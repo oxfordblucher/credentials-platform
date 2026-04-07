@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getProfile, editEmail, editName, editPassword, deleteProfile } from '../controllers/profile.ctrl.js';
+import { getProfile, editEmail, editName, editPassword } from '../controllers/profile.ctrl.js';
 import { authenticate } from '../middleware/auth.js';
 
 const router = Router();
@@ -10,6 +10,5 @@ router.get('/:id', getProfile);
 router.patch('/email', editEmail);
 router.patch('/name', editName);
 router.patch('/password', editPassword);
-router.delete('/delete', deleteProfile);
 
 export default router;

@@ -7,7 +7,7 @@ import { encryptPW, verifyPW } from "../utils/encrypt.js";
 import { deleteSessions } from "./session.serv.js";
 
 export const fetchProfile = async (userId: string) => {
-  const result = await db.query.users.findFirst({
+  const [result] = await db.query.users.findFirst({
     where: {
       id: userId
     },
@@ -17,7 +17,7 @@ export const fetchProfile = async (userId: string) => {
       last: true,
       dob: true,
       email: true,
-      isAdmin: true
+      is_admin: true
     },
     with: {
       org: {
@@ -42,11 +42,11 @@ export const fetchProfile = async (userId: string) => {
     }
   });
 
-  return result;
+  return result ?? null;
 }
 
 export const updateEmail = async (userId: string, email: string) => {
-  const existing = await db.user.findFirst({
+  const [existing] = await db.query.users.findFirst({
     where: {
       OR: [
         { email: email },
@@ -61,7 +61,7 @@ export const updateEmail = async (userId: string, email: string) => {
     pending_email: email
   }).where(eq(users.id, userId)).returning({ newEmail: users.pending_email });
 
-  return result;
+  return result ?? null;
 }
 
 export const updateName = async (userId: string, name: { first?: string, last?: string }) => {
@@ -74,7 +74,7 @@ export const updateName = async (userId: string, name: { first?: string, last?: 
       newFirst: users.first, newLast: users.last
     });
 
-  return result;
+  return result ?? null;
 }
 
 export const updatePassword = async (userId: string, password: string, newPass: string) => {

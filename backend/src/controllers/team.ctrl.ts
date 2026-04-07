@@ -18,7 +18,8 @@ export const getStaff = async (req: Request, res: Response, next: NextFunction) 
 
 export const addStaff = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId, userId } = req.params;
+    const { teamId } = req.params;
+    const { userId } = req.body;
     await addMember(teamId, userId);
 
     res.status(200).json({

@@ -51,6 +51,9 @@ export const editPassword = async (req: Request, res: Response, next: NextFuncti
     const { id } = req.user!;
     const { password, newPass } = req.body;
     await updatePassword(id, password, newPass);
+    res.status(200).json({
+      message: "Success"
+    })
   }
   catch (error) {
     next(error);

@@ -36,7 +36,7 @@ export const getInvites = async (req: Request, res: Response, next: NextFunction
 export const renewInvite = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const id = req.params.id;
-    const newExpiration = updateInvite(id);
+    const newExpiration = await updateInvite(id);
 
     res.status(200).json({
       message: 'Invite renewed successfully',

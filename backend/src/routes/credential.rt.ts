@@ -12,6 +12,6 @@ router.post('/', addCredential);
 router.use(authorize);
 
 router.get('/:userId', getCredentials);
-router.put('/:userId/:credId', verifyCredential);
+router.patch('/users/:userId/credentials/:credId', verifyCredential);
 
 export default router;

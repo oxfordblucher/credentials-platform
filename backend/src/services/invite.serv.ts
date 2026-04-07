@@ -29,13 +29,13 @@ export const fetchInvites = async (id: string) => {
 export const updateInvite = async (id: string) => {
   const result = await db.update(invites).set({
     expiration: sql`now() + INTERVAL '7d'`
-  }).where(eq(invites.id, id));
+  }).where(eq(invites.id, id)).returning();
   
-  return result.rowCount > 0;
+  return result.length > 0;
 }
 
 export const deleteInvite = async (id: string) => {
-  const result = await db.delete(invites).where(eq(invites.id, id));
+  const result = await db.delete(invites).where(eq(invites.id, id)).returning({ deletedId: invites.id });
 
-  return result.rowCount > 0;
+  return result.length > 0;
 }

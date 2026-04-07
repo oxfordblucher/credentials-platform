@@ -3,7 +3,7 @@ import { db } from "../db/index.js";
 import { sql, and, eq } from "drizzle-orm";
 
 export const fetchUserCreds = async (userId: string) => {
-  const result = db.query.credentials.findMany({
+  const result = await db.query.credentials.findMany({
     with: {
       userCredentials: {
         where: {
@@ -18,10 +18,12 @@ export const fetchUserCreds = async (userId: string) => {
       }
     }
   })
+
+  return result;
 }
 
 export const addUserCred = async (userId: string, credInput: NewUserCred) => {
-  const [result] = db.insert(userCredentials).values({
+  const [result] = await db.insert(userCredentials).values({
     ...credInput
   }).returning();
 
@@ -29,17 +31,18 @@ export const addUserCred = async (userId: string, credInput: NewUserCred) => {
 }
 
 export const confirmUserCred = async (mgrId: string, userId: string, credId: string) => {
-  const [result] = db.update(userCredentials).set({
+  const [result] = await db.update(userCredentials).set({
     verified: sql`now()`,
     verifier_id: mgrId
   }).where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credId)))
     .returning({
-
+      credId: userCredentials.credential_id,
+      userId: userCredentials.user_id
     });
+
+  return result ?? null;
 }
 
 export const removeUserCred = async () => {
-  const [result] = db.delete(userCredentials).set({
-    
-  })
+  const [result] = db.delete(userCredentials).where();
 }

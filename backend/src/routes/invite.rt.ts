@@ -6,7 +6,7 @@ const router = Router();
 router.use(authenticate);
 router.use(authorize);
 
-router.post('/:teamId', sendInvites);
+router.post('/', sendInvites);
 router.get('/', getInvites);
 router.patch('/:id', renewInvite);
 router.delete('/:id', revokeInvite);

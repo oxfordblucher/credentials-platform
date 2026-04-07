@@ -7,7 +7,7 @@ router.use(authenticate);
 router.use(authorize);
 
 router.get('/', getStaff);
-router.patch('/:teamId/add/:userId', addStaff);
-router.delete('/:teamId/delete/:userId', removeStaff);
+router.post('/:teamId/members', addStaff);
+router.delete('/:teamId/members/:userId', removeStaff);
 
 export default router;

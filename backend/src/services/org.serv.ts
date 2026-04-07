@@ -22,10 +22,13 @@ export const createOrg = async (input: SetupInput) => {
       is_admin: true
     }, tx);
 
-    await tx.update(orgs).set({ admin_id: user.id }).where(eq(orgs.id, org.id));
-  });
+    const update = await tx.update(orgs).set({ admin_id: user.id }).where(eq(orgs.id, org.id)).returning({
+      orgId: orgs.id,
+      admin: orgs.admin_id
+    });
 
-  return result.rowCount > 0;
+    return update;
+  });
 }
 
 export const fetchTeams = async (id: string) => {
@@ -65,10 +68,14 @@ export const createTeam = async (team: NewTeam) => {
 }
 
 export const deleteTeam = async (id: string) => {
-  const result = await db.transaction(async (tx: Transaction) => {
-    await tx.update(teams).set({ deleted: new Date() }).where(eq(teams.id, id));
+  await db.transaction(async (tx: Transaction) => {
+    const deleted = await tx.update(teams).set({ 
+      deleted: new Date() 
+    }).where(eq(teams.id, id)).returning({
+      teamId: teams.id
+    });
     await tx.delete(teamMembers).where(eq(teamMembers.team_id, id));
-  });
 
-  return result.rowCount > 0;
+    return deleted.length > 0;
+  });
 }

@@ -12,7 +12,7 @@ const parseDeviceInfo = (agent: string) => {
 }
 
 export const createSession = async (tx: Transaction, id: string, user: string, token: string, agent: string, ip: string) => {
-  const result = await db.insert(sessions).values({
+  const result = await tx.insert(sessions).values({
     id: id,
     user_id: user,
     token: hashToken(token),
@@ -44,8 +44,10 @@ export const deleteSessions = async (userId: string, options?: { exclude?: strin
       conditions.push(eq(sessions.id, options.specificId));
     }
 
-    const result = await db.delete(sessions).where(and(...conditions));
-    return result.rowCount > 0;
+    const result = await tx.delete(sessions).where(and(...conditions)).returning({
+      deletedId: sessions.id
+    });
+    return result.length > 0;
   }
 
   return tx ? exec(tx) : db.transaction(exec);

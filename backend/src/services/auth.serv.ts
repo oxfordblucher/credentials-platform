@@ -28,7 +28,7 @@ export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
       });
     }
 
-    return user;
+    return user ?? null;
   }
 
   return tx ? newUser(tx) : db.transaction(newUser);
@@ -62,7 +62,7 @@ export const login = async (credentials: LoginInput, agent: string, ip: string) 
   const access = signAccessToken({
     id: user.id,
     org: user.org,
-    session: sessionId
+    sessionId: sessionId
   });
 
   return { access, refresh };
@@ -81,7 +81,7 @@ export const refresh = async (token: string): Promise<{ newAccess: string; newRe
   const newAccess = signAccessToken({
     id: confirmed.user,
     org: confirmed.org,
-    session: confirmed.session
+    sessionId: confirmed.session
   });
   await updateSession(confirmed.user, confirmed.session, hashToken(newRefresh));
 

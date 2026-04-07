@@ -1,4 +1,4 @@
-import { AccessPayload } from "./types.ts";
+import { AccessPayload } from "./types.js";
 
 declare global {
   namespace Express {

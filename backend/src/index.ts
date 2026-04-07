@@ -19,12 +19,13 @@ app.use(cookieParser());
 const apiBase = '/api';
 
 app.use(apiBase + '/auth', authRouter);
-app.use(apiBase + '/profile', profileRouter);
-app.use(apiBase + '/notification', notificationRouter);
-app.use(apiBase + '/credential', credentialRouter);
-app.use(apiBase + '/session', sessionRouter);
-app.use(apiBase + '/team', teamRouter);
-app.use(apiBase + '/org', orgRouter);
+app.use(apiBase + '/profiles', profileRouter);
+app.use(apiBase + '/notifications', notificationRouter);
+app.use(apiBase + '/credentials', credentialRouter);
+app.use(apiBase + '/sessions', sessionRouter);
+app.use(apiBase + '/teams', teamRouter);
+app.use(apiBase + '/orgs', orgRouter);
+app.use(apiBase + '/invites', inviteRouter);
 
 app.get(apiBase + '/health', (req: Request, res: Response) => {
     res.status(200).json({
