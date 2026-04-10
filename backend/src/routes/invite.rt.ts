@@ -4,11 +4,13 @@ import { getInvites, sendInvites, renewInvite, revokeInvite } from '../controlle
 
 const router = Router();
 router.use(authenticate);
+
+router.get('/', getInvites);
+
 router.use(authorize);
 
-router.post('/', sendInvites);
-router.get('/', getInvites);
-router.patch('/:id', renewInvite);
-router.delete('/:id', revokeInvite);
+router.post('/teams/:teamsId', sendInvites);
+router.patch('/teams/:teamsId/:id', renewInvite);
+router.delete('/teams/:teamsId/:id', revokeInvite);
 
 export default router;

@@ -6,12 +6,34 @@ export class AppError extends Error {
 
 export class TokenReuseError extends AppError {
   constructor() {
-    super(401, "Token reuse detected");
+    super(401, "Unauthorized");
+    this.name = 'Token Reuse'
   }
 }
 
 export class TokenMissingError extends AppError {
   constructor() {
-    super(401, "No token found");
+    super(401, "Unauthorized");
+    this.name = 'Missing Token';
+  }
+}
+
+export class UserMissingError extends AppError {
+  constructor() {
+    super(401, "Unauthorized");
+    this.name = 'Missing User';
+  }
+}
+
+export class UserAuthError extends AppError {
+  constructor() {
+    super(401, "Unauthorized");
+    this.name = 'Invalid credentials';
+  }
+}
+
+export class PermissionError extends AppError {
+  constructor() {
+    super(403, "Insufficient permissions");
   }
 }

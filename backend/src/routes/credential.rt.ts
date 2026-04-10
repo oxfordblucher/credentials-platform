@@ -1,17 +1,21 @@
 import { Router } from "express";
-import { getCredentials, addCredential, verifyCredential } from "../controllers/credential.ctrl.js";
-import { authenticate, authorize } from "../middleware/auth.js";
+import { submitCredential, getCredentials, addCredential, verifyCredential, revokeCredential, addTeamCred, removeTeamCred, getTeamCreds } from "../controllers/credential.ctrl.js";
+import { authenticate, authorize, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
 router.use(authenticate);
-
 router.get('/', getCredentials);
-router.post('/', addCredential);
+router.post('/submit', submitCredential);
+
+router.post('/', requireAdmin, addCredential);
 
 router.use(authorize);
-
-router.get('/:userId', getCredentials);
-router.patch('/users/:userId/credentials/:credId', verifyCredential);
+router.get('/teams/:teamId', getTeamCreds);
+router.post('/teams/:teamId', addTeamCred);
+router.delete('/teams/:teamId/creds/:credId', removeTeamCred);
+router.get('/teams/:teamId/users/:userId', getCredentials);
+router.patch('/teams/:teamId/users/:userId/creds/:credId', verifyCredential);
+router.delete('/teams/:teamId/users/:userId/creds/:credId', revokeCredential);
 
 export default router;

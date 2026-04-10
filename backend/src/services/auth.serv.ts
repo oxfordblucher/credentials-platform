@@ -5,7 +5,7 @@ import { RegisterInput, LoginInput } from '../utils/zod.js';
 import { createSession, deleteSessions, fetchSessionInfo, updateSession } from './session.serv.js'
 import { verifyRefresh, signRefreshToken, signAccessToken, genUUID, hashToken } from '../utils/token.js';
 import { encryptPW, verifyPW } from '../utils/encrypt.js';
-import { AppError, TokenReuseError } from '../errors/AppError.js';
+import { AppError, TokenReuseError, UserAuthError, UserMissingError } from '../errors/AppError.js';
 import { Transaction } from '../types/types.js';
 
 export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
@@ -38,7 +38,8 @@ export const fetchAuthUser = async (email: string) => {
   const [fetched] = await db.select({
     id: users.id,
     hash: users.password,
-    org: users.org_id
+    org: users.org_id,
+    isAdmin: users.is_admin
   }).from(users).where(eq(users.email, email)).limit(1);
 
   return fetched ?? null;
@@ -46,10 +47,10 @@ export const fetchAuthUser = async (email: string) => {
 
 export const login = async (credentials: LoginInput, agent: string, ip: string) => {
   const user = await fetchAuthUser(credentials.email);
-  if (!user) throw new AppError(404, 'User not found');
+  if (!user) throw new UserMissingError;
 
   const passwordMatch = await verifyPW(credentials.password, user.hash);
-  if (!passwordMatch) throw new AppError(401, 'Invalid credentials');
+  if (!passwordMatch) throw new UserAuthError;
 
   const sessionId = genUUID();
   const refresh = signRefreshToken(user.id, sessionId);
@@ -62,7 +63,8 @@ export const login = async (credentials: LoginInput, agent: string, ip: string) 
   const access = signAccessToken({
     id: user.id,
     org: user.org,
-    sessionId: sessionId
+    sessionId: sessionId,
+    isAdmin: user.isAdmin
   });
 
   return { access, refresh };
@@ -81,7 +83,8 @@ export const refresh = async (token: string): Promise<{ newAccess: string; newRe
   const newAccess = signAccessToken({
     id: confirmed.user,
     org: confirmed.org,
-    sessionId: confirmed.session
+    sessionId: confirmed.session,
+    isAdmin: confirmed.isAdmin
   });
   await updateSession(confirmed.user, confirmed.session, hashToken(newRefresh));
 

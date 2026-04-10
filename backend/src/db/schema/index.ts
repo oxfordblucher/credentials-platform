@@ -73,6 +73,10 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
     verifier: r.one.users({
       from: r.userCredentials.verifier_id,
       to: r.users.id
+    }),
+    revoker: r.one.users({
+      from: r.userCredentials.revoker_id,
+      to: r.users.id
     })
   },
   invites: {

@@ -5,10 +5,13 @@ import { getTeams, createTeam, removeTeam, setupOrg } from '../controllers/org.c
 const router = Router();
 
 router.post('/', setupOrg);
+
 router.use(authenticate);
+
+router.get('/', getTeams);
+
 router.use(authorize);
 
-router.get('/teams', getTeams);
 router.post('/teams', createTeam);
 router.delete('/teams/:teamId', removeTeam);
 

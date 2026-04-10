@@ -34,7 +34,7 @@ export const addMember = async (team: string, user: string) => {
     team_id: team,
     user_id: user,
     role: 'member',
-    joined: sql`now()`
+    joined: sql`NOW()`
   }).returning();
 
   return result ?? null;

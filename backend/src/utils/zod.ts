@@ -40,3 +40,13 @@ export const inviteSchema = z.object({
 });
 
 export type InviteInput = z.infer<typeof inviteSchema>
+
+export const newCredSchema = z.object({
+  name: z.string(),
+  description: z.string()
+});
+
+export const userCredSchema = z.object({
+  credential_id: z.string(),
+  file: z.string()
+});

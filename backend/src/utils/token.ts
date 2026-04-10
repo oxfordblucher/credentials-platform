@@ -24,9 +24,9 @@ export const signRefreshToken = (userId: string, sessionId: string) => {
   );
 }
 
-export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'org' | 'sessionId'>) => {
+export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'org' | 'sessionId' | 'isAdmin'>) => {
   return jwt.sign(
-    { id: user.id, org: user.org, sessionId: user.sessionId },
+    { id: user.id, org: user.org, sessionId: user.sessionId, isAdmin: user.isAdmin },
     accessSecret,
     { expiresIn: '15m' }
   );
@@ -51,5 +51,10 @@ export const setTokenCookie = (res: Response, refresh: string) => {
 }
 
 export const clearTokenCookie = (res: Response) => {
-  res.clearCookie('refreshToken', { path: '/auth/refresh' });
+  res.clearCookie('refreshToken', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'strict', 
+    path: '/auth/refresh',
+  });
 }

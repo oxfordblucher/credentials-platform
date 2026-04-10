@@ -1,4 +1,4 @@
-import { invites } from "../db/schema/index.js";
+import { invites, teams } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { InviteInput } from "../utils/zod.js";
 import { eq, sql } from "drizzle-orm";
@@ -16,12 +16,15 @@ export const createInvites = async (invite: InviteInput, senderId: string) => {
   return result;
 }
 
-export const fetchInvites = async (id: string) => {
+export const fetchInvites = async (id: string, isAdmin: boolean, orgId: string) => {
+  const where = (isAdmin) ? eq(invites.org_id, orgId) : eq(invites.inviter_id, id);
   const result = await db.select({
     id: invites.id,
+    teamId: invites.team_id,
+    teamName: teams.name,
     email: invites.email,
     expiration: invites.expiration
-  }).from(invites).where(eq(invites.inviter_id, id));
+  }).from(invites).innerJoin(teams, eq(teams.id, invites.team_id)).where(where);
 
   return result;
 }

@@ -4,10 +4,12 @@ import { getStaff, addStaff, removeStaff } from '../controllers/team.ctrl.js';
 
 const router = Router();
 router.use(authenticate);
-router.use(authorize);
 
 router.get('/', getStaff);
-router.post('/:teamId/members', addStaff);
-router.delete('/:teamId/members/:userId', removeStaff);
+
+router.use(authorize);
+
+router.post('/teams/:teamId/members', addStaff);
+router.delete('/teams/:teamId/members/:userId', removeStaff);
 
 export default router;

@@ -4,6 +4,7 @@ export type AccessPayload = {
   id: string;
   org: string;
   sessionId: string;
+  isAdmin: boolean;
   iat: number;
   exp: number;
 }
@@ -23,16 +24,21 @@ export interface SessionInfo {
   sessionId: string;
 }
 
-export type ProfileRow = {
-  id: string;
-  first: string;
-  last: string;
-  dob: Date;
-  email: string;
-  org: string;
-  isAdmin: boolean;
-  role: string | null;
-  team: string | null;
+export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+export type ManagedCredParams = {
+  mgrId: string;
+  userId: string;
+  credId: string;
 }
 
-export type Transaction = Parameters<Parameters<typeof db.transaction>[0]>[0];
+export type ManagedTeamParams = {
+  mgrId: string;
+  userId: string;
+  teamId: string;
+}
+
+export type ManagedInviteParams = {
+  senderId: string;
+  inviteId: string;
+}
