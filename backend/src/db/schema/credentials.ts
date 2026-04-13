@@ -1,5 +1,7 @@
 import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum } from "drizzle-orm/pg-core";
 
+const credEnum = pgEnum('status', ['pending', 'active', 'expired', 'revoked']);
+
 export const credentials = pgTable("credentials", {
   id: uuid().primaryKey(),
   name: varchar({ length: 100 }).notNull(),
@@ -21,7 +23,7 @@ export const userCredentials = pgTable("user_credentials", {
   verified: timestamp(),
   expiration: timestamp(),
   revocation: timestamp(),
-  status: pgEnum('status', ['pending', 'active', 'expired', 'revoked']).default('pending')
+  status: credEnum.notNull().default('pending')
 }, (t) => [primaryKey({ columns: [t.user_id, t.credential_id] })]);
 
 export type NewUserCred = typeof userCredentials.$inferInsert;

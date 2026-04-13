@@ -5,8 +5,9 @@ import { orgs } from './orgs.js';
 import { sessions } from './sessions.js';
 import { credentials, teamCredentials, userCredentials } from './credentials.js';
 import { invites } from './invites.js';
+import { notifications } from './notifications.js';
 
-export const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentials, teamCredentials, userCredentials, invites }, (r) => ({
+export const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentials, teamCredentials, userCredentials, invites, notifications }, (r) => ({
   users: {
     org: r.one.orgs({
       from: r.users.org_id,
@@ -92,6 +93,12 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       from: r.invites.inviter_id,
       to: r.users.id
     })
+  },
+  notifications: {
+    recipient: r.one.users({
+      from: r.notifications.user_id,
+      to: r.users.id
+    })
   }
 }));
 
@@ -101,3 +108,4 @@ export * from './orgs.js';
 export * from './sessions.js';
 export * from './credentials.js';
 export * from './invites.js';
+export * from './notifications.js';

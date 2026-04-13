@@ -2,6 +2,8 @@ import { credentials, NewUserCred, teamCredentials, userCredentials } from "../d
 import { db } from "../db/index.js";
 import { sql, and, eq } from "drizzle-orm";
 import { ManagedCredParams } from "../types/types.js";
+import { Events } from "../events/event.js";
+import { evtEmitter } from "../events/emitter.js";
 
 export const readCredentials = async (userId: string) => {
   const result = await db.query.credentials.findMany({
@@ -28,6 +30,10 @@ export const createUserCreds = async (credInput: NewUserCred) => {
     ...credInput
   }).returning();
 
+  if (result) {
+    evtEmitter.emit(Events.CREDENTIAL_SUBMITTED);
+  }
+
   return result ?? null;
 }
 
@@ -41,6 +47,9 @@ export const updateVerifyCreds = async ({ mgrId, userId, credId }: ManagedCredPa
       userId: userCredentials.user_id
     });
 
+  if (result) {
+    evtEmitter.emit(Events.CREDENTIAL_VERIFIED, result);
+  }
   return result ?? null;
 }
 
@@ -85,12 +94,16 @@ export const createTeamCred = async (teamId: string, credId: string) => {
     }
   });
 
+  if (result) {
+    evtEmitter.emit(Events.CREDENTIAL_CREATED, { teamId, credId });
+  }
+
   return result ?? null;
 }
 
 export const deleteTeamCred = async (teamId: string, credId: string) => {
   const [result] = await db.delete(teamCredentials)
-    .where(eq(teamCredentials.credential_id, credId))
+    .where(and(eq(teamCredentials.credential_id, credId), eq(teamCredentials.team_id, teamId)))
     .returning({ deletedId: teamCredentials.credential_id });
 
   return result ?? null;
