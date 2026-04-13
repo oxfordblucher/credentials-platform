@@ -14,7 +14,18 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       to: r.orgs.id,
       optional: false
     }),
-    memberships: r.many.teamMembers()
+    memberships: r.many.teamMembers(),
+    managedTeams: r.many.teams(),
+    notifications: r.many.notifications(),
+    credentials: r.many.userCredentials({
+      alias: 'holder'
+    }), 
+    verifiedCreds: r.many.userCredentials({
+      alias: 'verifier'
+    }),
+    revokedCreds: r.many.userCredentials({
+      alias: 'revoked'
+    })
   },
   teams: {
     manager: r.one.users({
@@ -65,7 +76,8 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
   userCredentials: {
     holder: r.one.users({
       from: r.userCredentials.user_id,
-      to: r.users.id
+      to: r.users.id,
+      alias: "holder"
     }),
     cred: r.one.credentials({
       from: r.userCredentials.credential_id,
@@ -73,11 +85,13 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
     }),
     verifier: r.one.users({
       from: r.userCredentials.verifier_id,
-      to: r.users.id
+      to: r.users.id,
+      alias: "verifier"
     }),
     revoker: r.one.users({
       from: r.userCredentials.revoker_id,
-      to: r.users.id
+      to: r.users.id,
+      alias: "revoker"
     })
   },
   invites: {

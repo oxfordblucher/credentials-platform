@@ -46,6 +46,8 @@ export const newCredSchema = z.object({
   description: z.string()
 });
 
+export type newCredInput = z.infer<typeof newCredSchema>
+
 export const userCredSchema = z.object({
   credential_id: z.string(),
   file: z.string()

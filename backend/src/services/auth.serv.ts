@@ -5,7 +5,7 @@ import { RegisterInput, LoginInput } from '../utils/zod.js';
 import { createSession, deleteSessions, fetchSessionInfo, updateSession } from './session.serv.js'
 import { verifyRefresh, signRefreshToken, signAccessToken, genUUID, hashToken } from '../utils/token.js';
 import { encryptPW, verifyPW } from '../utils/encrypt.js';
-import { AppError, TokenReuseError, UserAuthError, UserMissingError } from '../errors/AppError.js';
+import { AppError, AuthError, PermissionError, NotFoundError } from '../errors/AppError.js';
 import { Transaction } from '../types/types.js';
 
 export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
@@ -20,6 +20,8 @@ export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
       id: users.id
     });
 
+    if (!user) throw new AppError(404, "User creation failed");
+
     if (team && role) {
       await tx.insert(teamMembers).values({
         user_id: user.id,
@@ -28,7 +30,7 @@ export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
       });
     }
 
-    return user ?? null;
+    return user;
   }
 
   return tx ? newUser(tx) : db.transaction(newUser);
@@ -47,10 +49,10 @@ export const fetchAuthUser = async (email: string) => {
 
 export const login = async (credentials: LoginInput, agent: string, ip: string) => {
   const user = await fetchAuthUser(credentials.email);
-  if (!user) throw new UserMissingError;
+  if (!user) throw new AuthError(`User with email ${credentials.email} not found`);
 
   const passwordMatch = await verifyPW(credentials.password, user.hash);
-  if (!passwordMatch) throw new UserAuthError;
+  if (!passwordMatch) throw new AuthError(`Login for user ${user.id} failed - wrong password`);
 
   const sessionId = genUUID();
   const refresh = signRefreshToken(user.id, sessionId);
@@ -76,7 +78,7 @@ export const refresh = async (token: string): Promise<{ newAccess: string; newRe
   const hash = hashToken(token);
   if (hash !== confirmed.token) {
     await deleteSessions(decoded.user, { specificId: decoded.sessionId });
-    throw new TokenReuseError();
+    throw new AuthError(`Token reuse detected for user ${decoded.user}`);
   }
 
   const newRefresh = signRefreshToken(confirmed.user, confirmed.session);

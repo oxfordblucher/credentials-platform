@@ -4,6 +4,7 @@ const credEnum = pgEnum('status', ['pending', 'active', 'expired', 'revoked']);
 
 export const credentials = pgTable("credentials", {
   id: uuid().primaryKey(),
+  org_id: uuid().notNull(),
   name: varchar({ length: 100 }).notNull(),
   description: text()
 });

@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { readCredentials, createUserCreds, updateVerifyCreds, deleteCredentials, readTeamCreds, createTeamCred, deleteTeamCred } from '../services/credential.serv.js';
+import { readCredentials, createUserCreds, updateVerifyCreds, deleteCredentials, readTeamCreds, createTeamCred, deleteTeamCred, createCredential } from '../services/credential.serv.js';
 import { userCredSchema, newCredSchema } from '../utils/zod.js';
 
 export const getCredentials = async (req: Request, res: Response, next: NextFunction) => {
@@ -116,7 +116,7 @@ export const addCredential = async (req: Request, res: Response, next: NextFunct
   try {
     const { orgId } = req.user!;
     const verified = newCredSchema.parse(req.body);
-    const newCred = await createCredential();
+    const newCred = await createCredential(orgId, verified);
   }
   catch (error) {
     next(error);

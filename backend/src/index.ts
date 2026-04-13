@@ -9,6 +9,7 @@ import orgRouter from './routes/org.rt.js';
 import inviteRouter from './routes/invite.rt.js';
 import { errorHandler } from './middleware/error.js';
 import cookieParser from 'cookie-parser';
+import './events/listener.js';
 
 const app = express();
 const port = 3000;
