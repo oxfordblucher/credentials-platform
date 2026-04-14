@@ -9,7 +9,7 @@ export const users = pgTable("users", {
   pending_email: varchar({ length: 255 }).unique(),
   password: text().notNull(),
   org_id: uuid().notNull(),
-  is_admin: boolean().default(false),
+  is_admin: boolean().notNull().default(false),
   created: timestamp().notNull().defaultNow(),
   login: timestamp("last_login")
 });
