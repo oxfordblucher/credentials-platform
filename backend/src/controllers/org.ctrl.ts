@@ -18,8 +18,8 @@ export const setupOrg = async (req: Request, res: Response, next: NextFunction) 
 
 export const getTeams = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { org } = req.user!;
-    const teams = await fetchTeams(org);
+    const { orgId } = req.user!;
+    const teams = await fetchTeams(orgId);
 
     res.status(200).json({
       message: "Teams fetched successfully",

@@ -4,7 +4,7 @@ ARG NODE_VERSION=24.11.1
 
 # Stage 0: base
 FROM node:${NODE_VERSION}-alpine as base
-WORKDIR /user/src/app
+WORKDIR /usr/src/app
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
 # Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into

@@ -2,7 +2,7 @@ import { db } from '../db/index.js';
 
 export type AccessPayload = {
   id: string;
-  org: string;
+  orgId: string;
   sessionId: string;
   isAdmin: boolean;
   iat: number;

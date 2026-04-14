@@ -63,6 +63,10 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       to: r.users.id
     })
   },
+  credentials: {
+    teams: r.many.teamCredentials(),
+    users: r.many.userCredentials()
+  },
   teamCredentials: {
     team: r.one.teams({
       from: r.teamCredentials.team_id,

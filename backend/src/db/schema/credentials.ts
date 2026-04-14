@@ -3,7 +3,7 @@ import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum } from "dri
 const credEnum = pgEnum('status', ['pending', 'active', 'expired', 'revoked']);
 
 export const credentials = pgTable("credentials", {
-  id: uuid().primaryKey(),
+  id: uuid().primaryKey().defaultRandom(),
   org_id: uuid().notNull(),
   name: varchar({ length: 100 }).notNull(),
   description: text()

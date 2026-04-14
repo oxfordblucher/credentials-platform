@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyAccess } from '../utils/token.js';
-import { AppError, PermissionError, TokenMissingError, TokenReuseError } from '../errors/AppError.js';
+import { AppError, PermissionError, AuthError } from '../errors/AppError.js';
 import { db } from '../db/index.js';
 import { teams, teamMembers } from '../db/schema/index.js';
 import { eq, and, or } from 'drizzle-orm';
@@ -15,11 +15,11 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
       req.user = decoded;
       next();
     } else {
-      return next(new TokenMissingError);
+      return next(new AuthError());
     }
   }
   catch (error) {
-    next(new TokenReuseError);
+    next(new AuthError());
   }
 }
 

@@ -52,19 +52,20 @@ export const notifyCredSubmit = async ({ userId, credId, credName }: EventPayloa
     .innerJoin(users, eq(users.id, teamMembers.user_id))
     .where(eq(teamMembers.user_id, userId));
 
-  const notificationsToBe = managers.map(m => ({
-    user_id: m.userId,
-    payload: {
-      type: "CREDENTIAL_SUBMITTED",
-      message: `${m.first} ${m.last} has submitted ${credName} for approval`,
-      data: {
-        credId: credId,
-        credName: credName,
-        userId: userId
+  const notificationsToBe = managers.flatMap(m => {
+    return m.manager_id ? {
+      user_id: m.manager_id,
+      payload: {
+        type: "CREDENTIAL_SUBMITTED",
+        message: `${m.first} ${m.last} has submitted ${credName} for approval`,
+        data: {
+          credId: credId,
+          credName: credName,
+          userId: userId
+        }
       }
-    },
-    created_at: sql`NOW()`
-  }));
+    } : []
+  });
 
   await db.insert(notifications).values(notificationsToBe);
 }

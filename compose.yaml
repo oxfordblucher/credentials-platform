@@ -80,7 +80,7 @@ secrets:
   db-password:
     file: db/password.txt
   jwt-secret:
-    file: db/jwt_secret.json
+    file: db/jwt-secret.json
 networks:
   app-network:
     driver: bridge

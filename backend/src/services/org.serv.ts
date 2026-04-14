@@ -18,7 +18,7 @@ export const createOrg = async (input: SetupInput) => {
       dob: input.dob,
       email: input.email,
       password: input.password,
-      orgId: org.id,
+      org_id: org.id,
       is_admin: true
     }, tx);
 
@@ -42,7 +42,7 @@ export const fetchTeams = async (id: string) => {
       name: true
     },
     with: {
-      teamMembers: {
+      members: {
         columns: { role: true },
         orderBy: { role: "asc" },
         with: {

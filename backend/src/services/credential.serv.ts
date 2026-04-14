@@ -10,7 +10,7 @@ import { NotFoundError} from "../errors/AppError.js";
 export const readCredentials = async (userId: string) => {
   const result = await db.query.credentials.findMany({
     with: {
-      userCredentials: {
+      users: {
         where: {
           user_id: userId
         },
@@ -53,7 +53,7 @@ export const updateVerifyCreds = async ({ mgrId, userId, credId }: ManagedCredPa
 }
 
 export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredParams) => {
-  const [result] = db.update(userCredentials).set({
+  const [result] = await db.update(userCredentials).set({
     revocation: sql`NOW()`,
     revoker_id: mgrId,
     status: 'revoked'
@@ -71,7 +71,7 @@ export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredPa
 export const readTeamCreds = async (teamId: string) => {
   const result = await db.query.credentials.findMany({
     with: {
-      teamCredentials: {
+      teams: {
         where: {
           team_id: teamId
         }
@@ -95,7 +95,7 @@ export const createTeamCred = async (teamId: string, credId: string) => {
       name: true
     },
     with: {
-      teamCredentials: {
+      teams: {
         where: { team_id: teamId },
         columns: { team_id: true },
         with: {
@@ -108,10 +108,10 @@ export const createTeamCred = async (teamId: string, credId: string) => {
   });
 
   evtEmitter.emit(Events.CREDENTIAL_REQUIRED, { 
-    teamId: result.teamCredentials.team_id,
-    teamName: result.teamCredentials.team.name,
-    credId: result.id,
-    credName: result.name
+    teamId: result!.teams[0].team_id,
+    teamName: result!.teams[0].team!.name,
+    credId: result!.id,
+    credName: result!.name
   });
   return result;
 }

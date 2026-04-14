@@ -10,11 +10,13 @@ import { Transaction } from '../types/types.js';
 
 export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
   // Hash the password
-  const { team, role, password, ...rest } = userData;
+  const { team, role, password, dob, ...rest } = userData;
+  dob.setHours(12);
   const hashedPassword = await encryptPW(password);
   const newUser = async (tx: Transaction) => {
     const [user] = await tx.insert(users).values({
       ...rest,
+      dob: dob,
       password: hashedPassword
     }).returning({
       id: users.id

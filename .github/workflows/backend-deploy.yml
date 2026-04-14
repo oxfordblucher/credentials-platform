@@ -52,7 +52,7 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}/backend:latest
           cache-from: type=gha
-          cache-to: type-gha, mode=max
+          cache-to: type=gha, mode=max
 
       - name: Deploy to Render
         run: curl -X POST ${{ secrets.RENDER_HOOK }}

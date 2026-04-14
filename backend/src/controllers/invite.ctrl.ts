@@ -20,8 +20,8 @@ export const sendInvites = async (req: Request, res: Response, next: NextFunctio
 
 export const getInvites = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, isAdmin, org_id } = req.user!;
-    const invites = await fetchInvites(id, isAdmin, org_id);
+    const { id, isAdmin, orgId } = req.user!;
+    const invites = await fetchInvites(id, isAdmin, orgId);
 
     res.status(200).json({
       message: 'Invites fetched successfully',

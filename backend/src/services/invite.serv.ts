@@ -3,12 +3,18 @@ import { db } from "../db/index.js";
 import { InviteInput } from "../utils/zod.js";
 import { eq, sql } from "drizzle-orm";
 import { NotFoundError } from "../errors/AppError.js";
+import { genInvite } from "../utils/token.js";
 
-export const createInvites = async (invite: InviteInput, senderId: string) => {
-  const result = await db.insert(invites).values({
-    ...invite,
-    inviter_id: senderId
-  }).returning({
+export const createInvites = async (inviteData: InviteInput, senderId: string) => {
+  const { emails, ...newInvite } = inviteData;
+  const result = await db.insert(invites).values(
+    emails.map(email => ({
+      ...newInvite,
+      email: email,
+      inviter_id: senderId,
+      token: genInvite()
+    }))
+  ).returning({
     id: invites.id,
     email: invites.email,
     expiration: invites.expiration

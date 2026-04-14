@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { createUser, login, refresh } from '../services/auth.serv.js';
 import { registerSchema, loginSchema } from '../utils/zod.js';
 import { clearTokenCookie, setTokenCookie } from '../utils/token.js';
-import { TokenMissingError, TokenReuseError } from '../errors/AppError.js';
+import { AuthError } from '../errors/AppError.js';
 import { deleteSessions } from '../services/session.serv.js';
 
 export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -39,8 +39,8 @@ export const loginUser = async (req: Request, res: Response, next: NextFunction)
 
 export const logoutUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, session } = req.user!;
-    await deleteSessions(id, { specificId: session });
+    const { id, sessionId } = req.user!;
+    await deleteSessions(id, { specificId: sessionId });
 
     clearTokenCookie(res);
     res.status(200).json({
@@ -55,7 +55,7 @@ export const logoutUser = async (req: Request, res: Response, next: NextFunction
 export const refreshTokens = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.cookies?.refreshToken;
-    if (!token) throw new TokenMissingError();
+    if (!token) throw new AuthError();
     const { newAccess, newRefresh } = await refresh(token);
 
     setTokenCookie(res, newRefresh);
@@ -65,7 +65,7 @@ export const refreshTokens = async (req: Request, res: Response, next: NextFunct
     });
   }
   catch (error) {
-    if (error instanceof TokenMissingError || error instanceof TokenReuseError) {
+    if (error instanceof AuthError) {
       clearTokenCookie(res);
     }
     next(error)
