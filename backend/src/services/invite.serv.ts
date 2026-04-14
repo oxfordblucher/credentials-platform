@@ -2,6 +2,7 @@ import { invites, teams } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { InviteInput } from "../utils/zod.js";
 import { eq, sql } from "drizzle-orm";
+import { NotFoundError } from "../errors/AppError.js";
 
 export const createInvites = async (invite: InviteInput, senderId: string) => {
   const result = await db.insert(invites).values({
@@ -34,11 +35,13 @@ export const updateInvite = async (id: string) => {
     expiration: sql`now() + INTERVAL '7d'`
   }).where(eq(invites.id, id)).returning();
   
-  return result.length > 0;
+  if (!result) throw new NotFoundError();
+  return result;
 }
 
 export const deleteInvite = async (id: string) => {
-  const result = await db.delete(invites).where(eq(invites.id, id)).returning({ deletedId: invites.id });
-
-  return result.length > 0;
+  const [result] = await db.delete(invites).where(eq(invites.id, id)).returning({ deletedId: invites.id });
+  
+  if (!result) throw new NotFoundError();
+  return result;
 }
