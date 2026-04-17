@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticate, authorize } from '../middleware/auth.js';
-import { getTeams, createTeam, removeTeam, setupOrg } from '../controllers/org.ctrl.js';
+import { getTeams, makeTeam, removeTeam, setupOrg } from '../controllers/org.ctrl.js';
 
 const router = Router();
 
@@ -12,7 +12,7 @@ router.get('/', getTeams);
 
 router.use(authorize);
 
-router.post('/teams', createTeam);
+router.post('/teams', makeTeam);
 router.delete('/teams/:teamId', removeTeam);
 
 export default router;

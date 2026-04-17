@@ -59,3 +59,8 @@ export const userCredSchema = z.object({
   credential_id: z.string(),
   file: z.string()
 });
+
+export const newTeamSchema = z.object({
+  name: z.string(),
+  description: z.string() 
+});

@@ -85,3 +85,40 @@ export const notifyInvitee = async () => {
 export const notifyInviter = async () => {
 
 }
+
+export const fetchUserNotifications = async (userId: string) => {
+  const notifications = await db.query.notifications.findMany({
+    where: {
+      user_id: userId
+    }
+  });
+
+  return notifications;
+}
+
+export const deleteNotifications = async (userId: string, noteId?: string) => {
+  const conditions = [eq(notifications.user_id, userId)];
+
+  if (noteId) {
+    conditions.push(eq(notifications.id, noteId));
+  }
+
+  const deleted = await db.delete(notifications)
+    .where(and(...conditions)).returning({ deletedId: notifications.id });
+
+  return deleted;
+}
+
+export const updateNotifications = async (userId: string, noteId?: string) => {
+  const conditions = [eq(notifications.user_id, userId)];
+
+  if (noteId) {
+    conditions.push(eq(notifications.id, noteId));
+  }
+
+  const read = await db.update(notifications).set({
+    read_at: sql`NOW()`
+  }).where(and(...conditions)).returning({ updatedId: notifications.id });
+
+  return read;
+}

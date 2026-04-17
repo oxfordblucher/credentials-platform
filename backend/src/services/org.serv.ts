@@ -64,7 +64,7 @@ export const fetchTeams = async (id: string) => {
 export const createTeam = async (team: NewTeam) => {
   const [result] = await db.insert(teams).values(team).returning();
 
-  return result ?? null;
+  return result;
 }
 
 export const deleteTeam = async (id: string) => {

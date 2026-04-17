@@ -1,9 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
+import { deleteNotifications, fetchUserNotifications } from '../services/notification.serv.js';
 
 export const getNotifications = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const id = req.user!.id;
+    const notifications = fetchUserNotifications(id);
+
     res.status(200).json({
-      message: 'Notifications retrieved successfully'
+      message: 'Notifications retrieved successfully',
+      notifications: notifications
     });
   }
   catch (error) {
@@ -11,8 +16,11 @@ export const getNotifications = async (req: Request, res: Response, next: NextFu
   }
 }
 
-export const deleteNotification = async (req: Request, res: Response, next: NextFunction) => {
+export const clearNotification = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const id = req.user!.id;
+    const { noteId } = req.params as { noteId: string };
+
     res.status(200).json({
       message: 'Notification deleted successfully'
     });
@@ -24,6 +32,9 @@ export const deleteNotification = async (req: Request, res: Response, next: Next
 
 export const clearAllNotifications = async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const id = req.user!.id;
+    await deleteNotifications(id);
+
     res.status(200).json({
       message: 'All notifications cleared successfully'
     });

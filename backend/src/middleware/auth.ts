@@ -25,8 +25,8 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 export const authorize = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, org, isAdmin } = req.user!;
-    const teamId = req.params.teamId ?? req.body.teamId;
+    const { id, orgId, isAdmin } = req.user!;
+    const teamId = req.params.teamId as string | undefined ?? req.body.teamId as string | undefined;
 
     if (!teamId) {
       return isAdmin ? next() : next(new PermissionError);
@@ -37,7 +37,7 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
       role: teamMembers.role,
     }).from(teams)
       .leftJoin(teamMembers, and(eq(teamMembers.team_id, teams.id), eq(teamMembers.user_id, id)))
-      .where(and(eq(teams.org_id, org), eq(teams.id, teamId))).limit(1);
+      .where(and(eq(teams.org_id, orgId), eq(teams.id, teamId))).limit(1);
     
     if (!access) {
       return next(new AppError(403, "Team not found"));
