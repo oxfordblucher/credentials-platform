@@ -7,11 +7,12 @@ import { NotFoundError } from '../errors/AppError.js';
 
 type ConfirmUploadParams = {
   userId: string;
+  orgId: string;
   credentialTypeId: string;
   submittedMetadata: Record<string, unknown>;
 };
 
-export const confirmUpload = async ({ userId, credentialTypeId, submittedMetadata }: ConfirmUploadParams) => {
+export const confirmUpload = async ({ userId, orgId, credentialTypeId, submittedMetadata }: ConfirmUploadParams) => {
   const [token] = await db.select()
     .from(uploadTokens)
     .where(and(
@@ -31,6 +32,8 @@ export const confirmUpload = async ({ userId, credentialTypeId, submittedMetadat
     .limit(1);
 
   if (!credType) throw new NotFoundError('Credential type not found');
+
+  if (credType.org_id !== orgId) throw new NotFoundError('Credential type not found');
 
   const validator = buildMetadataValidator(credType.metadata_schema as Record<string, unknown>);
   validator.parse(submittedMetadata);

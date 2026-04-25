@@ -109,11 +109,11 @@ export type VerifyBody = z.infer<typeof verifyBodySchema>;
 
 export const rejectBodySchema = z.object({
   rejection_reason_id: z.string().uuid(),
-  review_notes: z.string().optional(),
+  review_notes: z.string().max(1000).optional(),
 });
 export type RejectBody = z.infer<typeof rejectBodySchema>;
 
 export const revokeBodySchema = z.object({
-  reason: z.string().min(1),
+  reason: z.string().min(1).max(1000),
 });
 export type RevokeBody = z.infer<typeof revokeBodySchema>;

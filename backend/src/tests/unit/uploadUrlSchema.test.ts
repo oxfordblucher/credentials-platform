@@ -52,6 +52,9 @@ describe('rejectBodySchema', () => {
   it('rejects non-UUID rejection_reason_id', () => {
     expect(() => rejectBodySchema.parse({ rejection_reason_id: 'not-a-uuid' })).toThrow();
   });
+  it('rejects review_notes over 1000 chars', () => {
+    expect(() => rejectBodySchema.parse({ rejection_reason_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', review_notes: 'a'.repeat(1001) })).toThrow();
+  });
 });
 
 describe('revokeBodySchema', () => {
@@ -63,5 +66,8 @@ describe('revokeBodySchema', () => {
   });
   it('rejects empty reason', () => {
     expect(() => revokeBodySchema.parse({ reason: '' })).toThrow();
+  });
+  it('rejects reason over 1000 chars', () => {
+    expect(() => revokeBodySchema.parse({ reason: 'a'.repeat(1001) })).toThrow();
   });
 });

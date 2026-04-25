@@ -56,6 +56,7 @@ const { confirmUpload } = await import('../../services/confirmUpload.serv.js');
 // ── Helpers ─────────────────────────────────────────────────────────
 const PARAMS = {
   userId: 'user-1',
+  orgId: 'org-1',
   credentialTypeId: 'cred-type-1',
   submittedMetadata: { license: 'ABC123' },
 };
@@ -68,6 +69,7 @@ const MOCK_TOKEN = {
 
 const MOCK_CRED_TYPE = {
   id: 'cred-type-1',
+  org_id: 'org-1',
   metadata_schema: { type: 'object', properties: { license: { type: 'string' } } },
 };
 
@@ -159,6 +161,12 @@ describe('confirmUpload', () => {
 
   it('throws 404 if credential type not found', async () => {
     resetMocks({ credType: null });
+    const { NotFoundError } = await import('../../errors/AppError.js');
+    await expect(confirmUpload(PARAMS)).rejects.toThrow(NotFoundError);
+  });
+
+  it('throws 404 if credential type belongs to a different org', async () => {
+    resetMocks({ credType: { ...MOCK_CRED_TYPE, org_id: 'other-org' } });
     const { NotFoundError } = await import('../../errors/AppError.js');
     await expect(confirmUpload(PARAMS)).rejects.toThrow(NotFoundError);
   });
