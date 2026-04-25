@@ -1,16 +1,18 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { userCredentials, credentialAuditLog } from '../db/schema/index.js';
+import { userCredentials, credentialAuditLog, credEnum } from '../db/schema/index.js';
 import { NotFoundError } from '../errors/AppError.js';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
+type CredentialStatus = typeof credEnum.enumValues[number];
 
 type WriteStatusChangeParams = {
   userId: string;
   credentialId: string;
   actorId: string;
-  fromStatus: string | null;
-  toStatus: 'active' | 'rejected' | 'revoked';
+  fromStatus: CredentialStatus | null;
+  toStatus: CredentialStatus;
   notes?: string;
 };
 
@@ -18,8 +20,7 @@ const writeStatusChange = async (tx: Tx, params: WriteStatusChangeParams) => {
   await tx.insert(credentialAuditLog).values({
     user_id: params.userId,
     credential_id: params.credentialId,
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    from_status: params.fromStatus as any,
+    from_status: params.fromStatus,
     to_status: params.toStatus,
     actor_id: params.actorId,
     notes: params.notes,
@@ -50,6 +51,10 @@ export const verifyCredential = async ({
         verifier_id: actorId,
         expiration_date,
         verified_metadata: verified_metadata ?? null,
+        rejection_reason_id: null,
+        review_notes: null,
+        revocation: null,
+        revoker_id: null,
       })
       .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
       .returning();

@@ -112,6 +112,15 @@ describe('verifyCredential', () => {
     const setArg = (mockTxUpdate.mock.results[0]?.value as { set: AnyMock }).set?.mock?.calls[0]?.[0];
     expect(setArg?.verified_metadata).toEqual({ cert: 'ok' });
   });
+
+  it('clears rejection and revocation fields on verify', async () => {
+    await verifyCredential({ ...BASE, expiration_date: new Date('2027-01-01') });
+    const setArg = (mockTxUpdate.mock.results[0]?.value as { set: AnyMock }).set?.mock?.calls[0]?.[0];
+    expect(setArg?.rejection_reason_id).toBeNull();
+    expect(setArg?.review_notes).toBeNull();
+    expect(setArg?.revocation).toBeNull();
+    expect(setArg?.revoker_id).toBeNull();
+  });
 });
 
 describe('rejectCredential', () => {
