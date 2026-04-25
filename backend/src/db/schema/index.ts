@@ -6,6 +6,7 @@ import { sessions } from './sessions.js';
 import { credentialTypes, teamCredentials, userCredentials, rejectionReasons } from './credentials.js';
 import { invites } from './invites.js';
 import { notifications } from './notifications.js';
+import { roleEnum } from './enums.js';
 
 export const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentialTypes, teamCredentials, userCredentials, rejectionReasons, invites, notifications }, (r) => ({
   users: {
@@ -50,7 +51,7 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
   },
   orgs: {
     owner: r.one.users({
-      from: r.orgs.admin_id,
+      from: r.orgs.owner_id,
       to: r.users.id
     }),
     teams: r.many.teams(),
@@ -127,3 +128,4 @@ export * from './sessions.js';
 export * from './credentials.js';
 export * from './invites.js';
 export * from './notifications.js';
+export { roleEnum } from './enums.js';

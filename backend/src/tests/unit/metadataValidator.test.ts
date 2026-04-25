@@ -93,6 +93,16 @@ describe('buildMetadataValidator', () => {
     ).toThrow(AppError);
   });
 
+  it('throws AppError for non-string enum values', () => {
+    expect(() =>
+      buildMetadataValidator({
+        type: 'object',
+        properties: { level: { enum: [1, 2, 3] } },
+        required: ['level']
+      })
+    ).toThrow(AppError);
+  });
+
   it('throws AppError when root is not an object schema', () => {
     expect(() =>
       buildMetadataValidator({ type: 'string' })

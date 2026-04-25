@@ -19,6 +19,9 @@ function buildPropSchema(key: string, prop: JsonSchemaProp): z.ZodTypeAny {
     if (!Array.isArray(prop.enum) || prop.enum.length === 0) {
       throw new AppError(400, `Unsupported schema field: ${key}`);
     }
+    if (!prop.enum.every((v) => typeof v === 'string')) {
+      throw new AppError(400, `Unsupported schema field: ${key} (enum values must be strings)`);
+    }
     const [first, ...rest] = prop.enum as [string, ...string[]];
     return z.enum([first, ...rest]);
   }
@@ -39,6 +42,10 @@ function buildPropSchema(key: string, prop: JsonSchemaProp): z.ZodTypeAny {
       if (!prop.items) throw new AppError(400, `Unsupported schema field: ${key}`);
       return z.array(buildPropSchema(key, prop.items));
     }
+    case 'object':
+      // Nested object schemas are not supported in this subset.
+      // If nested structures are needed, extend buildPropSchema recursively.
+      throw new AppError(400, `Unsupported schema field: ${key} (nested objects are not supported)`);
     default:
       throw new AppError(400, `Unsupported schema field: ${key}`);
   }

@@ -1,10 +1,12 @@
 import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum, jsonb, integer } from "drizzle-orm/pg-core";
+import { orgs } from "./orgs.js";
+import { users } from "./users.js";
 
-const credEnum = pgEnum('credential_status', ['pending', 'active', 'rejected', 'expired', 'revoked']);
+export const credEnum = pgEnum('credential_status', ['pending', 'active', 'rejected', 'expired', 'revoked']);
 
 export const credentialTypes = pgTable("credential_types", {
   id: uuid().primaryKey().defaultRandom(),
-  org_id: uuid().notNull(),
+  org_id: uuid().notNull().references(() => orgs.id),
   name: varchar({ length: 100 }).notNull(),
   description: text(),
   metadata_schema: jsonb().notNull().default({}),
@@ -14,14 +16,14 @@ export const credentialTypes = pgTable("credential_types", {
 
 export const teamCredentials = pgTable("team_credentials", {
   team_id: uuid().notNull(),
-  credential_id: uuid().notNull()
+  credential_id: uuid().notNull().references(() => credentialTypes.id)
 }, (t) => [primaryKey({ columns: [t.team_id, t.credential_id] })]);
 
 export const userCredentials = pgTable("user_credentials", {
   user_id: uuid().notNull(),
   credential_id: uuid().notNull(),
-  verifier_id: uuid(),
-  revoker_id: uuid(),
+  verifier_id: uuid().references(() => users.id),
+  revoker_id: uuid().references(() => users.id),
   file_key: varchar({ length: 255 }),
   submitted: timestamp().notNull().defaultNow(),
   verified: timestamp(),
@@ -45,8 +47,8 @@ export const rejectionReasons = pgTable("rejection_reasons", {
 // credential_audit_log is strictly append-only. Rows must never be updated or deleted.
 export const credentialAuditLog = pgTable("credential_audit_log", {
   id: uuid().primaryKey().defaultRandom(),
-  user_id: uuid().notNull(),
-  credential_id: uuid().notNull(),
+  user_id: uuid().notNull().references(() => users.id),
+  credential_id: uuid().notNull().references(() => credentialTypes.id),
   from_status: credEnum(),
   to_status: credEnum().notNull(),
   actor_id: uuid().notNull(),
