@@ -1,6 +1,6 @@
 import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum, jsonb, integer } from "drizzle-orm/pg-core";
 
-const credEnum = pgEnum('credential_status', ['pending', 'active', 'expired', 'revoked']);
+const credEnum = pgEnum('credential_status', ['pending', 'active', 'rejected', 'expired', 'revoked']);
 
 export const credentialTypes = pgTable("credential_types", {
   id: uuid().primaryKey().defaultRandom(),
@@ -22,18 +22,36 @@ export const userCredentials = pgTable("user_credentials", {
   credential_id: uuid().notNull(),
   verifier_id: uuid(),
   revoker_id: uuid(),
-  file: varchar({ length: 255 }),
+  file_key: varchar({ length: 255 }),
   submitted: timestamp().notNull().defaultNow(),
   verified: timestamp(),
   expiration: timestamp(),
   revocation: timestamp(),
-  status: credEnum().notNull().default('pending')
+  status: credEnum().notNull().default('pending'),
+  submitted_metadata: jsonb(),
+  verified_metadata: jsonb(),
+  expiration_date: timestamp(),
+  next_alert_at: timestamp(),
+  rejection_reason_id: uuid(),
+  review_notes: text()
 }, (t) => [primaryKey({ columns: [t.user_id, t.credential_id] })]);
 
 export const rejectionReasons = pgTable("rejection_reasons", {
   id: uuid().primaryKey().defaultRandom(),
   code: varchar({ length: 50 }).notNull(),
   label: varchar({ length: 100 }).notNull()
+});
+
+// credential_audit_log is strictly append-only. Rows must never be updated or deleted.
+export const credentialAuditLog = pgTable("credential_audit_log", {
+  id: uuid().primaryKey().defaultRandom(),
+  user_id: uuid().notNull(),
+  credential_id: uuid().notNull(),
+  from_status: credEnum(),
+  to_status: credEnum().notNull(),
+  actor_id: uuid().notNull(),
+  timestamp: timestamp().notNull().defaultNow(),
+  notes: text()
 });
 
 export type NewUserCred = typeof userCredentials.$inferInsert;

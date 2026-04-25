@@ -62,5 +62,30 @@ export const userCredSchema = z.object({
 
 export const newTeamSchema = z.object({
   name: z.string(),
-  description: z.string() 
+  description: z.string()
+});
+
+const metadataSchema = z.record(z.unknown()).optional().default({});
+
+export const createCredTypeSchema = z.object({
+  name: z.string().min(1),
+  description: z.string().optional(),
+  metadata_schema: metadataSchema
+});
+
+export type CreateCredTypeInput = z.infer<typeof createCredTypeSchema>;
+
+export const updateCredTypeSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional(),
+  metadata_schema: z.record(z.unknown()).optional()
+}).refine(
+  data => data.name !== undefined || data.description !== undefined || data.metadata_schema !== undefined,
+  { message: 'At least one field must be provided' }
+);
+
+export type UpdateCredTypeInput = z.infer<typeof updateCredTypeSchema>;
+
+export const listCredTypeQuerySchema = z.object({
+  includeDeactivated: z.coerce.boolean().optional()
 });

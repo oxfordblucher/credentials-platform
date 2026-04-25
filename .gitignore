@@ -3,3 +3,6 @@ jwt-secret.json
 node_modules/
 .DS_Store
 .env
+/docs
+backend/tsconfig.tsbuildinfo
+backend/tsconfig.tsbuildinfo
