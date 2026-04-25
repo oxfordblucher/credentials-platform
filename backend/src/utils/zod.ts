@@ -100,13 +100,15 @@ export const confirmUploadBodySchema = z.object({
 export type ConfirmUploadBody = z.infer<typeof confirmUploadBodySchema>;
 
 export const verifyBodySchema = z.object({
-  expiration_date: z.coerce.date(),
+  expiration_date: z.coerce.date().refine(d => d > new Date(), {
+    message: 'expiration_date must be in the future',
+  }),
   verified_metadata: z.record(z.string(), z.unknown()).optional(),
 });
 export type VerifyBody = z.infer<typeof verifyBodySchema>;
 
 export const rejectBodySchema = z.object({
-  rejection_reason_id: z.string().min(1),
+  rejection_reason_id: z.string().uuid(),
   review_notes: z.string().optional(),
 });
 export type RejectBody = z.infer<typeof rejectBodySchema>;

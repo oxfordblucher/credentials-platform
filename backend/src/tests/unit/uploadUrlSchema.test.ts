@@ -36,15 +36,21 @@ describe('verifyBodySchema', () => {
   it('rejects missing expiration_date', () => {
     expect(() => verifyBodySchema.parse({})).toThrow();
   });
+  it('rejects past expiration_date', () => {
+    expect(() => verifyBodySchema.parse({ expiration_date: '2020-01-01' })).toThrow();
+  });
 });
 
 describe('rejectBodySchema', () => {
   it('accepts rejection_reason_id and optional review_notes', () => {
-    expect(() => rejectBodySchema.parse({ rejection_reason_id: 'uuid-here' })).not.toThrow();
-    expect(() => rejectBodySchema.parse({ rejection_reason_id: 'uuid-here', review_notes: 'bad doc' })).not.toThrow();
+    expect(() => rejectBodySchema.parse({ rejection_reason_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' })).not.toThrow();
+    expect(() => rejectBodySchema.parse({ rejection_reason_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', review_notes: 'bad doc' })).not.toThrow();
   });
   it('rejects missing rejection_reason_id', () => {
     expect(() => rejectBodySchema.parse({})).toThrow();
+  });
+  it('rejects non-UUID rejection_reason_id', () => {
+    expect(() => rejectBodySchema.parse({ rejection_reason_id: 'not-a-uuid' })).toThrow();
   });
 });
 
