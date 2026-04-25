@@ -1,12 +1,14 @@
 import { Router } from "express";
 import { submitCredential, getCredentials, addCredential, verifyCredential, revokeCredential, addTeamCred, removeTeamCred, getTeamCreds } from "../controllers/credential.ctrl.js";
 import { authenticate, authorize, requireAdmin } from "../middleware/auth.js";
+import { getUploadUrl } from "../controllers/uploadUrl.ctrl.js";
 
 const router = Router();
 
 router.use(authenticate);
 router.get('/', getCredentials);
 router.post('/submit', submitCredential);
+router.post('/:credentialTypeId/upload-url', getUploadUrl);
 
 router.post('/', requireAdmin, addCredential);
 
