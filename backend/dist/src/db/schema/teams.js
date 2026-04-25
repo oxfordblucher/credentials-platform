@@ -1,5 +1,6 @@
 import { pgTable, varchar, timestamp, uuid, text, primaryKey } from "drizzle-orm/pg-core";
 import { roleEnum } from "./enums.js";
+import { users } from "./users.js";
 export const teams = pgTable("teams", {
     id: uuid().defaultRandom().primaryKey(),
     org_id: uuid().notNull(),
@@ -10,8 +11,8 @@ export const teams = pgTable("teams", {
     deleted: timestamp()
 });
 export const teamMembers = pgTable("team_members", {
-    user_id: uuid().notNull(),
-    team_id: uuid().notNull(),
+    user_id: uuid().notNull().references(() => users.id),
+    team_id: uuid().notNull().references(() => teams.id),
     role: roleEnum().notNull(),
     joined: timestamp().notNull().defaultNow()
 }, (t) => [primaryKey({ columns: [t.user_id, t.team_id] })]);

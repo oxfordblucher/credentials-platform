@@ -35,7 +35,7 @@ export const fetchAuthUser = async (email) => {
     const [fetched] = await db.select({
         id: users.id,
         hash: users.password,
-        org: users.org_id,
+        orgId: users.org_id,
         orgRole: users.org_role
     }).from(users).where(eq(users.email, email)).limit(1);
     return fetched ?? null;
@@ -55,7 +55,7 @@ export const login = async (credentials, agent, ip) => {
     });
     const access = signAccessToken({
         id: user.id,
-        orgId: user.org,
+        orgId: user.orgId,
         sessionId: sessionId,
         orgRole: user.orgRole
     });
@@ -72,7 +72,7 @@ export const refresh = async (token) => {
     const newRefresh = signRefreshToken(confirmed.user, confirmed.session);
     const newAccess = signAccessToken({
         id: confirmed.user,
-        orgId: confirmed.org,
+        orgId: confirmed.orgId,
         sessionId: confirmed.session,
         orgRole: confirmed.orgRole
     });

@@ -1,8 +1,9 @@
 import { pgTable, uuid, timestamp, index, jsonb } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { users } from "./users.js";
 export const notifications = pgTable("notifications", {
     id: uuid().defaultRandom().primaryKey(),
-    user_id: uuid().notNull(),
+    user_id: uuid().notNull().references(() => users.id),
     payload: jsonb(),
     created_at: timestamp().defaultNow(),
     read_at: timestamp()

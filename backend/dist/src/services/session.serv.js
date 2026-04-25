@@ -46,7 +46,7 @@ export const deleteSessions = async (userId, options, tx) => {
 export const fetchSessionInfo = async (userId, sessionId) => {
     const [sessionInfo] = await db.select({
         user: users.id,
-        org: users.org_id,
+        orgId: users.org_id,
         orgRole: users.org_role,
         session: sessions.id,
         token: sessions.token
