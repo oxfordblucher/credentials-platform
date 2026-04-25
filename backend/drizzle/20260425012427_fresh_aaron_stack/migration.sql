@@ -1,3 +1,9 @@
+CREATE TYPE "public"."role" AS ENUM ('member', 'manager');
+--> statement-breakpoint
+CREATE TYPE "public"."org_role" AS ENUM ('admin', 'owner');
+--> statement-breakpoint
+CREATE TYPE "public"."credential_status" AS ENUM ('pending', 'active', 'expired', 'revoked');
+--> statement-breakpoint
 CREATE TABLE "users" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 	"first_name" varchar(50) NOT NULL,
