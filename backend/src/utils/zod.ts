@@ -66,7 +66,7 @@ export const newTeamSchema = z.object({
 });
 
 export const createCredTypeSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).max(100),
   description: z.string().optional(),
   metadata_schema: z.record(z.string(), z.unknown()).optional().default({})
 });
@@ -74,7 +74,7 @@ export const createCredTypeSchema = z.object({
 export type CreateCredTypeInput = z.infer<typeof createCredTypeSchema>;
 
 export const updateCredTypeSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).max(100).optional(),
   description: z.string().optional(),
   metadata_schema: z.record(z.string(), z.unknown()).optional()
 }).refine(
@@ -85,5 +85,5 @@ export const updateCredTypeSchema = z.object({
 export type UpdateCredTypeInput = z.infer<typeof updateCredTypeSchema>;
 
 export const listCredTypeQuerySchema = z.object({
-  includeDeactivated: z.coerce.boolean().optional()
+  includeDeactivated: z.enum(['true', 'false']).transform(v => v === 'true').optional()
 });
