@@ -1,12 +1,15 @@
-import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum, jsonb, integer } from "drizzle-orm/pg-core";
 
 const credEnum = pgEnum('status', ['pending', 'active', 'expired', 'revoked']);
 
-export const credentials = pgTable("credentials", {
+export const credentialTypes = pgTable("credential_types", {
   id: uuid().primaryKey().defaultRandom(),
   org_id: uuid().notNull(),
   name: varchar({ length: 100 }).notNull(),
-  description: text()
+  description: text(),
+  metadata_schema: jsonb().notNull().default({}),
+  schema_version: integer().notNull().default(1),
+  deactivated_at: timestamp()
 });
 
 export const teamCredentials = pgTable("team_credentials", {
@@ -24,7 +27,13 @@ export const userCredentials = pgTable("user_credentials", {
   verified: timestamp(),
   expiration: timestamp(),
   revocation: timestamp(),
-  status: credEnum.notNull().default('pending')
+  status: credEnum().notNull().default('pending')
 }, (t) => [primaryKey({ columns: [t.user_id, t.credential_id] })]);
+
+export const rejectionReasons = pgTable("rejection_reasons", {
+  id: uuid().primaryKey().defaultRandom(),
+  code: varchar({ length: 50 }).notNull(),
+  label: varchar({ length: 100 }).notNull()
+});
 
 export type NewUserCred = typeof userCredentials.$inferInsert;

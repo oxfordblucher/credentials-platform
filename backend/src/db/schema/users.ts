@@ -1,4 +1,5 @@
-import { pgTable, unique, boolean, date, varchar, uuid, timestamp, text } from "drizzle-orm/pg-core";
+import { pgTable, unique, date, varchar, uuid, timestamp, text } from "drizzle-orm/pg-core";
+import { orgRoleEnum } from './enums.js';
 
 export const users = pgTable("users", {
   id: uuid().defaultRandom().primaryKey(),
@@ -9,7 +10,7 @@ export const users = pgTable("users", {
   pending_email: varchar({ length: 255 }).unique(),
   password: text().notNull(),
   org_id: uuid().notNull(),
-  is_admin: boolean().notNull().default(false),
+  org_role: orgRoleEnum(),
   created: timestamp().notNull().defaultNow(),
   login: timestamp("last_login")
 });

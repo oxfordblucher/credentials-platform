@@ -3,11 +3,11 @@ import { users } from './users.js';
 import { teams, teamMembers } from './teams.js';
 import { orgs } from './orgs.js';
 import { sessions } from './sessions.js';
-import { credentials, teamCredentials, userCredentials } from './credentials.js';
+import { credentialTypes, teamCredentials, userCredentials, rejectionReasons } from './credentials.js';
 import { invites } from './invites.js';
 import { notifications } from './notifications.js';
 
-export const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentials, teamCredentials, userCredentials, invites, notifications }, (r) => ({
+export const relations = defineRelations({ users, teams, teamMembers, orgs, sessions, credentialTypes, teamCredentials, userCredentials, rejectionReasons, invites, notifications }, (r) => ({
   users: {
     org: r.one.orgs({
       from: r.users.org_id,
@@ -24,7 +24,7 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       alias: 'verifier'
     }),
     revokedCreds: r.many.userCredentials({
-      alias: 'revoked'
+      alias: 'revoker'
     })
   },
   teams: {
@@ -63,7 +63,7 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       to: r.users.id
     })
   },
-  credentials: {
+  credentialTypes: {
     teams: r.many.teamCredentials(),
     users: r.many.userCredentials()
   },
@@ -72,9 +72,9 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       from: r.teamCredentials.team_id,
       to: r.teams.id
     }),
-    cred: r.one.credentials({
+    cred: r.one.credentialTypes({
       from: r.teamCredentials.credential_id,
-      to: r.credentials.id
+      to: r.credentialTypes.id
     })
   },
   userCredentials: {
@@ -83,9 +83,9 @@ export const relations = defineRelations({ users, teams, teamMembers, orgs, sess
       to: r.users.id,
       alias: "holder"
     }),
-    cred: r.one.credentials({
+    cred: r.one.credentialTypes({
       from: r.userCredentials.credential_id,
-      to: r.credentials.id
+      to: r.credentialTypes.id
     }),
     verifier: r.one.users({
       from: r.userCredentials.verifier_id,
