@@ -89,7 +89,7 @@ export const listCredTypeQuerySchema = z.object({
 });
 
 export const uploadUrlBodySchema = z.object({
-  ext: z.string().regex(/^[a-zA-Z0-9]+$/).max(10)
+  ext: z.string().regex(/^[a-zA-Z0-9]{1,10}$/)
 });
 
 export type UploadUrlBody = z.infer<typeof uploadUrlBodySchema>;
