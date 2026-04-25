@@ -93,6 +93,25 @@ describe('verifyCredential', () => {
     const result = await verifyCredential({ ...BASE, expiration_date: new Date('2027-01-01') });
     expect(result).toMatchObject({ user_id: 'user-1', credential_id: 'cred-1' });
   });
+
+  it('sets expiration_date in the update', async () => {
+    const expDate = new Date('2027-01-01');
+    await verifyCredential({ ...BASE, expiration_date: expDate });
+    const setArg = (mockTxUpdate.mock.results[0]?.value as { set: AnyMock }).set?.mock?.calls[0]?.[0];
+    expect(setArg?.expiration_date).toEqual(expDate);
+  });
+
+  it('sets verified_metadata=null when not provided', async () => {
+    await verifyCredential({ ...BASE, expiration_date: new Date('2027-01-01') });
+    const setArg = (mockTxUpdate.mock.results[0]?.value as { set: AnyMock }).set?.mock?.calls[0]?.[0];
+    expect(setArg?.verified_metadata).toBeNull();
+  });
+
+  it('sets verified_metadata when provided', async () => {
+    await verifyCredential({ ...BASE, expiration_date: new Date('2027-01-01'), verified_metadata: { cert: 'ok' } });
+    const setArg = (mockTxUpdate.mock.results[0]?.value as { set: AnyMock }).set?.mock?.calls[0]?.[0];
+    expect(setArg?.verified_metadata).toEqual({ cert: 'ok' });
+  });
 });
 
 describe('rejectCredential', () => {
@@ -110,6 +129,23 @@ describe('rejectCredential', () => {
     expect(auditValues?.to_status).toBe('rejected');
     expect(auditValues?.notes).toBe('bad doc');
   });
+
+  it('runs inside a transaction', async () => {
+    await rejectCredential({ ...BASE, rejection_reason_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' });
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes audit log with from_status', async () => {
+    await rejectCredential({ ...BASE, rejection_reason_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' });
+    const auditValues = (mockTxInsert.mock.results[0]?.value as { values: AnyMock }).values?.mock?.calls[0]?.[0];
+    expect(auditValues?.from_status).toBe('pending');
+    expect(auditValues?.actor_id).toBe('mgr-1');
+  });
+
+  it('returns the updated credential', async () => {
+    const result = await rejectCredential({ ...BASE, rejection_reason_id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11' });
+    expect(result).toMatchObject({ user_id: 'user-1', credential_id: 'cred-1' });
+  });
 });
 
 describe('revokeCredential', () => {
@@ -126,5 +162,22 @@ describe('revokeCredential', () => {
     const auditValues = mockInsertValues.mock.calls[0]?.[0] as Record<string, unknown>;
     expect(auditValues?.to_status).toBe('revoked');
     expect(auditValues?.notes).toBe('document expired');
+  });
+
+  it('runs inside a transaction', async () => {
+    await revokeCredential({ ...BASE, reason: 'document expired' });
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('writes audit log with from_status and actor_id', async () => {
+    await revokeCredential({ ...BASE, reason: 'document expired' });
+    const auditValues = (mockTxInsert.mock.results[0]?.value as { values: AnyMock }).values?.mock?.calls[0]?.[0];
+    expect(auditValues?.from_status).toBe('pending');
+    expect(auditValues?.actor_id).toBe('mgr-1');
+  });
+
+  it('returns the updated credential', async () => {
+    const result = await revokeCredential({ ...BASE, reason: 'document expired' });
+    expect(result).toMatchObject({ user_id: 'user-1', credential_id: 'cred-1' });
   });
 });
