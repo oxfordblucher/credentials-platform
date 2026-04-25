@@ -1,6 +1,6 @@
 import { pgTable, text, varchar, uuid, timestamp, primaryKey, pgEnum, jsonb, integer } from "drizzle-orm/pg-core";
 
-const credEnum = pgEnum('status', ['pending', 'active', 'expired', 'revoked']);
+const credEnum = pgEnum('credential_status', ['pending', 'active', 'expired', 'revoked']);
 
 export const credentialTypes = pgTable("credential_types", {
   id: uuid().primaryKey().defaultRandom(),
