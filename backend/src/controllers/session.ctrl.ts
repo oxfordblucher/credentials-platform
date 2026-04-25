@@ -19,7 +19,7 @@ export const getSessions = async (req: Request, res: Response, next: NextFunctio
 export const revokeSession = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.user!;
-    const sessionId = req.params.id!;
+    const sessionId = (req.params.id as string) ?? req.params.id;
 
     await deleteSessions(id, { specificId: sessionId });
 

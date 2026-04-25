@@ -1,4 +1,4 @@
-import { credentials, NewUserCred, teamCredentials, userCredentials } from "../db/schema/index.js";
+import { credentialTypes, NewUserCred, teamCredentials, userCredentials } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { sql, and, eq } from "drizzle-orm";
 import { ManagedCredParams } from "../types/types.js";
@@ -8,9 +8,9 @@ import { newCredInput } from "../utils/zod.js";
 import { NotFoundError} from "../errors/AppError.js";
 
 export const readCredentials = async (userId: string) => {
-  const result = await db.query.credentials.findMany({
+  const result = await db.query.credentialTypes.findMany({
     with: {
-      userCredentials: {
+      users: {
         where: {
           user_id: userId
         },
@@ -53,7 +53,7 @@ export const updateVerifyCreds = async ({ mgrId, userId, credId }: ManagedCredPa
 }
 
 export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredParams) => {
-  const [result] = db.update(userCredentials).set({
+  const [result] = await db.update(userCredentials).set({
     revocation: sql`NOW()`,
     revoker_id: mgrId,
     status: 'revoked'
@@ -69,9 +69,9 @@ export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredPa
 }
 
 export const readTeamCreds = async (teamId: string) => {
-  const result = await db.query.credentials.findMany({
+  const result = await db.query.credentialTypes.findMany({
     with: {
-      teamCredentials: {
+      teams: {
         where: {
           team_id: teamId
         }
@@ -88,14 +88,14 @@ export const createTeamCred = async (teamId: string, credId: string) => {
     credential_id: credId
   });
 
-  const result = await db.query.credentials.findFirst({
+  const result = await db.query.credentialTypes.findFirst({
     where: { id: credId },
     columns: {
       id: true,
       name: true
     },
     with: {
-      teamCredentials: {
+      teams: {
         where: { team_id: teamId },
         columns: { team_id: true },
         with: {
@@ -108,10 +108,10 @@ export const createTeamCred = async (teamId: string, credId: string) => {
   });
 
   evtEmitter.emit(Events.CREDENTIAL_REQUIRED, { 
-    teamId: result.teamCredentials.team_id,
-    teamName: result.teamCredentials.team.name,
-    credId: result.id,
-    credName: result.name
+    teamId: result!.teams[0].team_id,
+    teamName: result!.teams[0].team!.name,
+    credId: result!.id,
+    credName: result!.name
   });
   return result;
 }
@@ -127,7 +127,7 @@ export const deleteTeamCred = async (teamId: string, credId: string) => {
 }
 
 export const createCredential = async (orgId: string, cred: newCredInput) => {
-  const [result] = await db.insert(credentials).values({
+  const [result] = await db.insert(credentialTypes).values({
     org_id: orgId,
     name: cred.name,
     description: cred.description

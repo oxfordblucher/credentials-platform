@@ -12,6 +12,10 @@ export const hashToken = (token: string) => {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+export const genInvite = () => {
+  return crypto.randomBytes(32).toString('hex');
+}
+
 export const genUUID = () => {
   return crypto.randomUUID();
 }
@@ -24,9 +28,9 @@ export const signRefreshToken = (userId: string, sessionId: string) => {
   );
 }
 
-export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'org' | 'sessionId' | 'isAdmin'>) => {
+export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'orgId' | 'sessionId' | 'orgRole'>) => {
   return jwt.sign(
-    { id: user.id, org: user.org, sessionId: user.sessionId, isAdmin: user.isAdmin },
+    { id: user.id, orgId: user.orgId, sessionId: user.sessionId, orgRole: user.orgRole },
     accessSecret,
     { expiresIn: '15m' }
   );

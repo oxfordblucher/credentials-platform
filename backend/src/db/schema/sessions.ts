@@ -1,9 +1,10 @@
 import { pgTable, text, varchar, uuid, timestamp } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
+import { users } from "./users.js";
 
 export const sessions = pgTable("sessions", {
   id: uuid().primaryKey(),
-  user_id: uuid().notNull(),
+  user_id: uuid().notNull().references(() => users.id),
   token: text().notNull(),
   agent: varchar({ length: 512 }),
   device: varchar({ length: 100 }),

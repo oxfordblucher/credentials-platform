@@ -2,12 +2,9 @@
 
 ARG NODE_VERSION=24.11.1
 
-# Stage 1: development
-FROM node:${NODE_VERSION}-alpine AS dev
-
-ENV NODE_ENV development
+# Stage 0: base
+FROM node:${NODE_VERSION}-alpine as base
 WORKDIR /usr/src/app
-
 # Download dependencies as a separate step to take advantage of Docker's caching.
 # Leverage a cache mount to /root/.npm to speed up subsequent builds.
 # Leverage a bind mounts to package.json and package-lock.json to avoid having to copy them into
@@ -17,30 +14,30 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=cache,target=/root/.npm \
     npm ci
 
-# Run the application as a non-root user.
+# Stage 1: development
+FROM base AS dev
+ENV NODE_ENV development
+COPY --chown=node:node . .
 USER node
-
-# Copy the rest of the source files into the image.
-COPY . .
-
-# Expose the port that the application listens on.
 EXPOSE 3000
-
-# Run the application.
 CMD ["npx", "tsx", "watch", "./src/index.ts"]
 
+# Stage 2: builder
+FROM base AS builder
+COPY . .
+RUN npm run build
 
-# Stage 2: production
+# Stage 3: production
 FROM node:${NODE_VERSION}-alpine AS prod 
-
 ENV NODE_ENV production
 WORKDIR /usr/src/app
 
-COPY --from=dev /usr/src/app/package*.json ./
-RUN npm ci --omit=dev
+RUN --mount=type=bind,source=package.json,target=package.json \
+    --mount=type=bind,source=package-lock.json,target=package-lock.json \
+    --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev
 
-COPY --from=dev /usr/src/app/dist ./dist
+COPY --from=builder /usr/src/app/dist ./dist
 USER node
-
 EXPOSE 3000
 CMD ["node", "dist/index.js"]

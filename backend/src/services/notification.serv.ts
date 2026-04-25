@@ -52,19 +52,20 @@ export const notifyCredSubmit = async ({ userId, credId, credName }: EventPayloa
     .innerJoin(users, eq(users.id, teamMembers.user_id))
     .where(eq(teamMembers.user_id, userId));
 
-  const notificationsToBe = managers.map(m => ({
-    user_id: m.userId,
-    payload: {
-      type: "CREDENTIAL_SUBMITTED",
-      message: `${m.first} ${m.last} has submitted ${credName} for approval`,
-      data: {
-        credId: credId,
-        credName: credName,
-        userId: userId
+  const notificationsToBe = managers.flatMap(m => {
+    return m.manager_id ? {
+      user_id: m.manager_id,
+      payload: {
+        type: "CREDENTIAL_SUBMITTED",
+        message: `${m.first} ${m.last} has submitted ${credName} for approval`,
+        data: {
+          credId: credId,
+          credName: credName,
+          userId: userId
+        }
       }
-    },
-    created_at: sql`NOW()`
-  }));
+    } : []
+  });
 
   await db.insert(notifications).values(notificationsToBe);
 }
@@ -83,4 +84,41 @@ export const notifyInvitee = async () => {
 
 export const notifyInviter = async () => {
 
+}
+
+export const fetchUserNotifications = async (userId: string) => {
+  const notifications = await db.query.notifications.findMany({
+    where: {
+      user_id: userId
+    }
+  });
+
+  return notifications;
+}
+
+export const deleteNotifications = async (userId: string, noteId?: string) => {
+  const conditions = [eq(notifications.user_id, userId)];
+
+  if (noteId) {
+    conditions.push(eq(notifications.id, noteId));
+  }
+
+  const deleted = await db.delete(notifications)
+    .where(and(...conditions)).returning({ deletedId: notifications.id });
+
+  return deleted;
+}
+
+export const updateNotifications = async (userId: string, noteId?: string) => {
+  const conditions = [eq(notifications.user_id, userId)];
+
+  if (noteId) {
+    conditions.push(eq(notifications.id, noteId));
+  }
+
+  const read = await db.update(notifications).set({
+    read_at: sql`NOW()`
+  }).where(and(...conditions)).returning({ updatedId: notifications.id });
+
+  return read;
 }

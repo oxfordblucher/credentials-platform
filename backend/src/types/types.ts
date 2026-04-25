@@ -1,10 +1,12 @@
 import { db } from '../db/index.js';
 
+export type OrgRole = 'admin' | 'owner' | null;
+
 export type AccessPayload = {
   id: string;
-  org: string;
+  orgId: string;
   sessionId: string;
-  isAdmin: boolean;
+  orgRole: OrgRole;
   iat: number;
   exp: number;
 }

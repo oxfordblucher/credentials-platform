@@ -1,5 +1,7 @@
 password.txt
-jwt_secret.txt
+jwt-secret.json
 node_modules/
 .DS_Store
 .env
+/docs
+*.tsbuildinfo

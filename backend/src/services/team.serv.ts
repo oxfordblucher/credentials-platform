@@ -9,8 +9,8 @@ export const fetchStaff = async (id: string) => {
     },
     orderBy: { name: "asc" },
     with: {
-      teamMembers: {
-        where: { not: { user_id: id } },
+      members: {
+        where: { NOT: { user_id: id } },
         columns: { role: true },
         orderBy: { role: "asc" },
         with: {

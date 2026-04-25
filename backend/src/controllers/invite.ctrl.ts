@@ -20,8 +20,8 @@ export const sendInvites = async (req: Request, res: Response, next: NextFunctio
 
 export const getInvites = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, isAdmin, org_id } = req.user!;
-    const invites = await fetchInvites(id, isAdmin, org_id);
+    const { id, orgRole, orgId } = req.user!;
+    const invites = await fetchInvites(id, orgRole, orgId);
 
     res.status(200).json({
       message: 'Invites fetched successfully',
@@ -35,7 +35,7 @@ export const getInvites = async (req: Request, res: Response, next: NextFunction
 
 export const renewInvite = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id;
+    const id = req.params.id as string;
     const newExpiration = await updateInvite(id);
 
     res.status(200).json({
@@ -50,7 +50,7 @@ export const renewInvite = async (req: Request, res: Response, next: NextFunctio
 
 export const revokeInvite = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id;
+    const id = req.params.id as string;
     await deleteInvite(id);
 
     res.status(200).json({

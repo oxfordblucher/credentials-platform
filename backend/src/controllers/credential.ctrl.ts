@@ -4,7 +4,7 @@ import { userCredSchema, newCredSchema } from '../utils/zod.js';
 
 export const getCredentials = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.userId ?? req.user!.id;
+    const id = req.params.userId as string | undefined ?? req.user!.id;
     const credentials = await readCredentials(id);
 
     res.status(200).json({
@@ -39,7 +39,7 @@ export const submitCredential = async (req: Request, res: Response, next: NextFu
 export const verifyCredential = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.user!;
-    const { userId, credId } = req.params;
+    const { userId, credId } = req.params as { userId: string, credId: string };
     const verified = await updateVerifyCreds({ mgrId: id, userId, credId });
 
     res.status(200).json({
@@ -55,7 +55,7 @@ export const verifyCredential = async (req: Request, res: Response, next: NextFu
 export const revokeCredential = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.user!;
-    const { credId, userId } = req.params;
+    const { credId, userId } = req.params as { credId: string, userId: string };
     const revoked = await deleteCredentials({ mgrId: id, userId, credId });
 
     res.status(200).json({
@@ -70,8 +70,9 @@ export const revokeCredential = async (req: Request, res: Response, next: NextFu
 
 export const getTeamCreds = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId } = req.params;
+    const { teamId } = req.params as { teamId: string };
     const credentials = await readTeamCreds(teamId);
+
     res.status(200).json({
       message: "Success",
       credentials: credentials
@@ -84,9 +85,10 @@ export const getTeamCreds = async (req: Request, res: Response, next: NextFuncti
 
 export const addTeamCred = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId } = req.params;
+    const { teamId } = req.params as { teamId: string };
     const { credId } = req.body;
     const credential = await createTeamCred(teamId, credId);
+
     res.status(200).json({
       message: "Success",
       credential: credential
@@ -99,9 +101,10 @@ export const addTeamCred = async (req: Request, res: Response, next: NextFunctio
 
 export const removeTeamCred = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId } = req.params;
+    const { teamId } = req.params as { teamId: string };
     const { credId } = req.body;
     const deleted = await deleteTeamCred(teamId, credId);
+
     res.status(200).json({
       message: "Success",
       deleted: deleted
@@ -117,6 +120,11 @@ export const addCredential = async (req: Request, res: Response, next: NextFunct
     const { orgId } = req.user!;
     const verified = newCredSchema.parse(req.body);
     const newCred = await createCredential(orgId, verified);
+    
+    res.status(200).json({
+      message: "Success",
+      credential: newCred
+    });
   }
   catch (error) {
     next(error);

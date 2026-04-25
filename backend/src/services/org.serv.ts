@@ -18,8 +18,8 @@ export const createOrg = async (input: SetupInput) => {
       dob: input.dob,
       email: input.email,
       password: input.password,
-      orgId: org.id,
-      is_admin: true
+      org_id: org.id,
+      org_role: 'admin'
     }, tx);
 
     const update = await tx.update(orgs).set({ admin_id: user.id }).where(eq(orgs.id, org.id)).returning({
@@ -42,7 +42,7 @@ export const fetchTeams = async (id: string) => {
       name: true
     },
     with: {
-      teamMembers: {
+      members: {
         columns: { role: true },
         orderBy: { role: "asc" },
         with: {
@@ -64,7 +64,7 @@ export const fetchTeams = async (id: string) => {
 export const createTeam = async (team: NewTeam) => {
   const [result] = await db.insert(teams).values(team).returning();
 
-  return result ?? null;
+  return result;
 }
 
 export const deleteTeam = async (id: string) => {

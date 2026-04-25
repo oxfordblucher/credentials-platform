@@ -12,7 +12,7 @@ const parseDeviceInfo = (agent: string) => {
 }
 
 export const createSession = async (tx: Transaction, id: string, user: string, token: string, agent: string, ip: string) => {
-  const result = await tx.insert(sessions).values({
+  await tx.insert(sessions).values({
     id: id,
     user_id: user,
     token: hashToken(token),
@@ -20,8 +20,6 @@ export const createSession = async (tx: Transaction, id: string, user: string, t
     device: parseDeviceInfo(agent),
     ip: ip
   });
-
-  return result.rowCount > 0;
 }
 
 export const fetchSessions = async (userId: string) => {
@@ -56,8 +54,8 @@ export const deleteSessions = async (userId: string, options?: { exclude?: strin
 export const fetchSessionInfo = async (userId: string, sessionId: string) => {
   const [sessionInfo] = await db.select({
     user: users.id,
-    org: users.org_id,
-    isAdmin: users.is_admin,
+    orgId: users.org_id,
+    orgRole: users.org_role,
     session: sessions.id,
     token: sessions.token
   }).from(users)
@@ -69,11 +67,9 @@ export const fetchSessionInfo = async (userId: string, sessionId: string) => {
 }
 
 export const updateSession = async (userId: string, sessionId: string, hash: string) => {
-  const result = await db.update(sessions).set({
+  await db.update(sessions).set({
     token: hash,
     last_used: sql`NOW()`,
     expiration: sql`NOW() + INTERVAL '7d'`
   }).where(and(eq(sessions.user_id, userId), eq(sessions.id, sessionId)))
-
-  return result.rowCount > 0;
 }

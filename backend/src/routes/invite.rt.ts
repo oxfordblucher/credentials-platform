@@ -9,8 +9,8 @@ router.get('/', getInvites);
 
 router.use(authorize);
 
-router.post('/teams/:teamsId', sendInvites);
-router.patch('/teams/:teamsId/:id', renewInvite);
-router.delete('/teams/:teamsId/:id', revokeInvite);
+router.post('/teams/:teamId', sendInvites);
+router.patch('/teams/:teamId/:id', renewInvite);
+router.delete('/teams/:teamId/:id', revokeInvite);
 
 export default router;

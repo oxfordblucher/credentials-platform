@@ -17,7 +17,7 @@ export const fetchProfile = async (userId: string) => {
       last: true,
       dob: true,
       email: true,
-      is_admin: true
+      org_role: true
     },
     with: {
       org: {
@@ -71,7 +71,7 @@ export const updateName = async (userId: string, name: { first?: string, last?: 
 
   const [result] = await db.update(users).set(updates)
     .where(eq(users.id, userId)).returning({
-      newFirst: users.first, newLast: users.last
+      first: users.first, last: users.last
     });
 
   return result ?? null;
