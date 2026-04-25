@@ -54,8 +54,8 @@ export const deleteSessions = async (userId: string, options?: { exclude?: strin
 export const fetchSessionInfo = async (userId: string, sessionId: string) => {
   const [sessionInfo] = await db.select({
     user: users.id,
-    org: users.org_id,
-    isAdmin: users.is_admin,
+    orgId: users.org_id,
+    orgRole: users.org_role,
     session: sessions.id,
     token: sessions.token
   }).from(users)

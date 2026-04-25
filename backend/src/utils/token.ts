@@ -28,9 +28,9 @@ export const signRefreshToken = (userId: string, sessionId: string) => {
   );
 }
 
-export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'org' | 'sessionId' | 'isAdmin'>) => {
+export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'orgId' | 'sessionId' | 'orgRole'>) => {
   return jwt.sign(
-    { id: user.id, org: user.org, sessionId: user.sessionId, isAdmin: user.isAdmin },
+    { id: user.id, orgId: user.orgId, sessionId: user.sessionId, orgRole: user.orgRole },
     accessSecret,
     { expiresIn: '15m' }
   );

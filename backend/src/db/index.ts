@@ -1,4 +1,7 @@
 import { drizzle } from 'drizzle-orm/node-postgres';
-import { relations } from './schema/index.js';
+import * as schema from './schema/index.js';
 
-export const db = drizzle(process.env.DATABASE_URL!, { relations });
+export const db = drizzle({ 
+  connection: process.env.DATABASE_URL!,
+  schema
+});

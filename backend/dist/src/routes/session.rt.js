@@ -1,0 +1,10 @@
+import { Router } from 'express';
+import { getSessions, revokeSession, revokeOtherSessions, revokeAllSessions } from '../controllers/session.ctrl.js';
+import { authenticate } from '../middleware/auth.js';
+const router = Router();
+router.use(authenticate);
+router.get('/', getSessions);
+router.delete('/', revokeAllSessions);
+router.delete('/other', revokeOtherSessions);
+router.delete('/:id', revokeSession);
+export default router;

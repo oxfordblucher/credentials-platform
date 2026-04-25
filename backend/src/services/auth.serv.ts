@@ -42,8 +42,8 @@ export const fetchAuthUser = async (email: string) => {
   const [fetched] = await db.select({
     id: users.id,
     hash: users.password,
-    org: users.org_id,
-    isAdmin: users.is_admin
+    orgId: users.org_id,
+    orgRole: users.org_role
   }).from(users).where(eq(users.email, email)).limit(1);
 
   return fetched ?? null;
@@ -66,9 +66,9 @@ export const login = async (credentials: LoginInput, agent: string, ip: string) 
 
   const access = signAccessToken({
     id: user.id,
-    org: user.org,
+    orgId: user.orgId,
     sessionId: sessionId,
-    isAdmin: user.isAdmin
+    orgRole: user.orgRole
   });
 
   return { access, refresh };
@@ -86,9 +86,9 @@ export const refresh = async (token: string): Promise<{ newAccess: string; newRe
   const newRefresh = signRefreshToken(confirmed.user, confirmed.session);
   const newAccess = signAccessToken({
     id: confirmed.user,
-    org: confirmed.org,
+    orgId: confirmed.orgId,
     sessionId: confirmed.session,
-    isAdmin: confirmed.isAdmin
+    orgRole: confirmed.orgRole
   });
   await updateSession(confirmed.user, confirmed.session, hashToken(newRefresh));
 

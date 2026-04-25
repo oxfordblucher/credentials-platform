@@ -4,6 +4,7 @@ import { InviteInput } from "../utils/zod.js";
 import { eq, sql } from "drizzle-orm";
 import { NotFoundError } from "../errors/AppError.js";
 import { genInvite } from "../utils/token.js";
+import { OrgRole } from "../types/types.js";
 
 export const createInvites = async (inviteData: InviteInput, senderId: string) => {
   const { emails, ...newInvite } = inviteData;
@@ -23,8 +24,8 @@ export const createInvites = async (inviteData: InviteInput, senderId: string) =
   return result;
 }
 
-export const fetchInvites = async (id: string, isAdmin: boolean, orgId: string) => {
-  const where = (isAdmin) ? eq(invites.org_id, orgId) : eq(invites.inviter_id, id);
+export const fetchInvites = async (id: string, orgRole: OrgRole, orgId: string) => {
+  const where = (orgRole) ? eq(invites.org_id, orgId) : eq(invites.inviter_id, id);
   const result = await db.select({
     id: invites.id,
     teamId: invites.team_id,

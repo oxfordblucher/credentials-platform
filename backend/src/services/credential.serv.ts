@@ -1,4 +1,4 @@
-import { credentials, NewUserCred, teamCredentials, userCredentials } from "../db/schema/index.js";
+import { credentialTypes, NewUserCred, teamCredentials, userCredentials } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { sql, and, eq } from "drizzle-orm";
 import { ManagedCredParams } from "../types/types.js";
@@ -8,7 +8,7 @@ import { newCredInput } from "../utils/zod.js";
 import { NotFoundError} from "../errors/AppError.js";
 
 export const readCredentials = async (userId: string) => {
-  const result = await db.query.credentials.findMany({
+  const result = await db.query.credentialTypes.findMany({
     with: {
       users: {
         where: {
@@ -69,7 +69,7 @@ export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredPa
 }
 
 export const readTeamCreds = async (teamId: string) => {
-  const result = await db.query.credentials.findMany({
+  const result = await db.query.credentialTypes.findMany({
     with: {
       teams: {
         where: {
@@ -88,7 +88,7 @@ export const createTeamCred = async (teamId: string, credId: string) => {
     credential_id: credId
   });
 
-  const result = await db.query.credentials.findFirst({
+  const result = await db.query.credentialTypes.findFirst({
     where: { id: credId },
     columns: {
       id: true,
@@ -127,7 +127,7 @@ export const deleteTeamCred = async (teamId: string, credId: string) => {
 }
 
 export const createCredential = async (orgId: string, cred: newCredInput) => {
-  const [result] = await db.insert(credentials).values({
+  const [result] = await db.insert(credentialTypes).values({
     org_id: orgId,
     name: cred.name,
     description: cred.description

@@ -15,6 +15,7 @@ services:
       target: dev
     secrets:
       - db-password
+      - jwt-secret
     environment:
       DB_NAME: credplat
       DB_USER: postgres
@@ -61,16 +62,17 @@ services:
     secrets:
       - db-password
     volumes:
-      - db-data:/var/lib/postgresql/data
+      - db-data:/var/lib/postgresql
     environment:
       - POSTGRES_DB=credplat
       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+      - PGDATA=/var/lib/postgresql/data/pgdata
     networks:
       - app-network
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD", "pg_isready" ]
+      test: [ "CMD", "pg_isready", "-U", "postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5

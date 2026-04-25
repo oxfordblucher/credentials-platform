@@ -8,8 +8,9 @@ on:
     branches: [ main ]
     paths: [ 'backend/**' ]
 
-jobs: 
+jobs:
   test:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     environment: Testing
     steps:
@@ -22,12 +23,11 @@ jobs:
         working-directory: ./backend
         run: |
           export DOCKER_BUILDKIT=1
-          docker compose -f compose.test.yaml build --build-arg BUILDKIT_INLINE_CACHE=1
-          docker compose -f compose.test.yaml run --rm sut \
-            sh -c 'npx drizzle-kit push && npm test'
+          docker compose build --build-arg BUILDKIT_INLINE_CACHE=1
+          docker compose run --rm sut \
+            sh -c 'echo "testpassword" > /tmp/db_password && export DB_PASSWORD_FILE=/tmp/db_password && npx drizzle-kit push && npm test'
 
   deploy:
-    needs: test
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: Production

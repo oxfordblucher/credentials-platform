@@ -27,7 +27,7 @@ export const registerSchema = z.object({
   org_id: z.string(),
   team: z.string().nullish(),
   role: z.enum(["manager", "member"]).nullish(),
-  is_admin: z.boolean() 
+  org_role: z.enum(['admin', 'owner']).nullish()
 });
 
 export type RegisterInput = z.infer<typeof registerSchema>

@@ -25,11 +25,12 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 
 export const authorize = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id, orgId, isAdmin } = req.user!;
+    const { id, orgId, orgRole } = req.user!;
     const teamId = req.params.teamId as string | undefined ?? req.body.teamId as string | undefined;
 
     if (!teamId) {
-      return isAdmin ? next() : next(new PermissionError);
+      // any org-level role ('admin' | 'owner') grants access when no team context
+      return (orgRole === 'admin' || orgRole === 'owner') ? next() : next(new PermissionError);
     }
 
     const [access] = await db.select({
@@ -43,7 +44,7 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
       return next(new AppError(403, "Team not found"));
     }
 
-    if (isAdmin || access.role === 'manager') {
+    if (orgRole === 'admin' || orgRole === 'owner' || access.role === 'manager') {
       return next();
     } 
 
@@ -56,8 +57,9 @@ export const authorize = async (req: Request, res: Response, next: NextFunction)
 
 export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { isAdmin } = req.user!;
-    if (!isAdmin) return next(new PermissionError);
+    const { orgRole } = req.user!;
+    // any org-level role ('admin' | 'owner') is permitted
+    if (orgRole !== 'admin' && orgRole !== 'owner') return next(new PermissionError);
     return next();
   }
   catch (error) {

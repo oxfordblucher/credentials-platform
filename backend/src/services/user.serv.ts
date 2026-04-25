@@ -17,7 +17,7 @@ export const fetchProfile = async (userId: string) => {
       last: true,
       dob: true,
       email: true,
-      is_admin: true
+      org_role: true
     },
     with: {
       org: {

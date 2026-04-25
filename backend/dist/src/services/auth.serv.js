@@ -1,0 +1,81 @@
+import { eq, sql } from 'drizzle-orm';
+import { teamMembers, users } from "../db/schema/index.js";
+import { db } from "../db/index.js";
+import { createSession, deleteSessions, fetchSessionInfo, updateSession } from './session.serv.js';
+import { verifyRefresh, signRefreshToken, signAccessToken, genUUID, hashToken } from '../utils/token.js';
+import { encryptPW, verifyPW } from '../utils/encrypt.js';
+import { AppError, AuthError } from '../errors/AppError.js';
+export const createUser = async (userData, tx) => {
+    // Hash the password
+    const { team, role, password, dob, ...rest } = userData;
+    dob.setHours(12);
+    const hashedPassword = await encryptPW(password);
+    const newUser = async (tx) => {
+        const [user] = await tx.insert(users).values({
+            ...rest,
+            dob: dob,
+            password: hashedPassword
+        }).returning({
+            id: users.id
+        });
+        if (!user)
+            throw new AppError(404, "User creation failed");
+        if (team && role) {
+            await tx.insert(teamMembers).values({
+                user_id: user.id,
+                team_id: team,
+                role: role
+            });
+        }
+        return user;
+    };
+    return tx ? newUser(tx) : db.transaction(newUser);
+};
+export const fetchAuthUser = async (email) => {
+    const [fetched] = await db.select({
+        id: users.id,
+        hash: users.password,
+        org: users.org_id,
+        orgRole: users.org_role
+    }).from(users).where(eq(users.email, email)).limit(1);
+    return fetched ?? null;
+};
+export const login = async (credentials, agent, ip) => {
+    const user = await fetchAuthUser(credentials.email);
+    if (!user)
+        throw new AuthError(`User with email ${credentials.email} not found`);
+    const passwordMatch = await verifyPW(credentials.password, user.hash);
+    if (!passwordMatch)
+        throw new AuthError(`Login for user ${user.id} failed - wrong password`);
+    const sessionId = genUUID();
+    const refresh = signRefreshToken(user.id, sessionId);
+    await db.transaction(async (tx) => {
+        await createSession(tx, sessionId, user.id, refresh, agent, ip);
+        await tx.update(users).set({ login: sql `NOW()` }).where(eq(users.id, user.id));
+    });
+    const access = signAccessToken({
+        id: user.id,
+        orgId: user.org,
+        sessionId: sessionId,
+        orgRole: user.orgRole
+    });
+    return { access, refresh };
+};
+export const refresh = async (token) => {
+    const decoded = verifyRefresh(token);
+    const confirmed = await fetchSessionInfo(decoded.user, decoded.sessionId);
+    const hash = hashToken(token);
+    if (hash !== confirmed.token) {
+        await deleteSessions(decoded.user, { specificId: decoded.sessionId });
+        throw new AuthError(`Token reuse detected for user ${decoded.user}`);
+    }
+    const newRefresh = signRefreshToken(confirmed.user, confirmed.session);
+    const newAccess = signAccessToken({
+        id: confirmed.user,
+        orgId: confirmed.org,
+        sessionId: confirmed.session,
+        orgRole: confirmed.orgRole
+    });
+    await updateSession(confirmed.user, confirmed.session, hashToken(newRefresh));
+    return { newAccess, newRefresh };
+};
