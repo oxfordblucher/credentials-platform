@@ -87,3 +87,9 @@ export type UpdateCredTypeInput = z.infer<typeof updateCredTypeSchema>;
 export const listCredTypeQuerySchema = z.object({
   includeDeactivated: z.enum(['true', 'false']).transform(v => v === 'true').optional()
 });
+
+export const uploadUrlBodySchema = z.object({
+  ext: z.string().regex(/^[a-zA-Z0-9]{1,10}$/)
+});
+
+export type UploadUrlBody = z.infer<typeof uploadUrlBodySchema>;
