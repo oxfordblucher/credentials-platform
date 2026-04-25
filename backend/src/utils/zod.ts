@@ -93,3 +93,25 @@ export const uploadUrlBodySchema = z.object({
 });
 
 export type UploadUrlBody = z.infer<typeof uploadUrlBodySchema>;
+
+export const confirmUploadBodySchema = z.object({
+  submitted_metadata: z.record(z.string(), z.unknown()),
+});
+export type ConfirmUploadBody = z.infer<typeof confirmUploadBodySchema>;
+
+export const verifyBodySchema = z.object({
+  expiration_date: z.coerce.date(),
+  verified_metadata: z.record(z.string(), z.unknown()).optional(),
+});
+export type VerifyBody = z.infer<typeof verifyBodySchema>;
+
+export const rejectBodySchema = z.object({
+  rejection_reason_id: z.string().min(1),
+  review_notes: z.string().optional(),
+});
+export type RejectBody = z.infer<typeof rejectBodySchema>;
+
+export const revokeBodySchema = z.object({
+  reason: z.string().min(1),
+});
+export type RevokeBody = z.infer<typeof revokeBodySchema>;
