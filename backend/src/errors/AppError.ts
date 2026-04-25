@@ -24,3 +24,10 @@ export class NotFoundError extends AppError {
     this.name = "MissingError";
   }
 }
+
+export class RateLimitError extends AppError {
+  constructor(log?: string) {
+    super(429, "An upload is already in progress. Please wait for the existing link to expire.", log);
+    this.name = "RateLimitError";
+  }
+}
