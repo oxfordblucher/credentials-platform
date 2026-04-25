@@ -193,9 +193,8 @@ describe('confirmUpload', () => {
 
   it('passes from_status=null for a new credential', async () => {
     await confirmUpload(PARAMS);
-    // The first tx.insert call is the upsert — second is audit log
-    const auditInsertCall = mockTxInsert.mock.calls[1];
-    expect(auditInsertCall).toBeDefined(); // audit insert was called
+    const auditValuesArg = (mockTxInsert.mock.results[1]?.value as { values: AnyMock }).values?.mock?.calls[0]?.[0];
+    expect(auditValuesArg?.from_status).toBeNull();
   });
 
   it('passes from_status of existing credential when re-submitting', async () => {
