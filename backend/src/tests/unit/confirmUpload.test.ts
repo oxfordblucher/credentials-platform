@@ -4,21 +4,11 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 type AnyMock = jest.Mock<(...args: any[]) => any>;
 
 // ── DB chain mocks ──────────────────────────────────────────────────
-const mockLimit     = jest.fn() as AnyMock;
-const mockWhere     = jest.fn() as AnyMock;
-const mockFrom      = jest.fn() as AnyMock;
 const mockDbSelect  = jest.fn() as AnyMock;
 
 // Transaction mock: calls callback with mockTx
-const mockTxWhere      = jest.fn() as AnyMock;
-const mockTxFrom       = jest.fn() as AnyMock;
-const mockTxLimit      = jest.fn() as AnyMock;
 const mockTxSelect     = jest.fn() as AnyMock;
-const mockTxReturning  = jest.fn() as AnyMock;
-const mockTxValues     = jest.fn() as AnyMock;
 const mockTxInsert     = jest.fn() as AnyMock;
-const mockTxDeleteWhere = jest.fn() as AnyMock;
-const mockTxFrom2      = jest.fn() as AnyMock;
 const mockTxDelete     = jest.fn() as AnyMock;
 
 const mockTx = {
@@ -179,6 +169,13 @@ describe('confirmUpload', () => {
     await confirmUpload(PARAMS);
     expect(mockBuildMetadataValidator).toHaveBeenCalledWith(MOCK_CRED_TYPE.metadata_schema);
     expect(mockParse).toHaveBeenCalledWith(PARAMS.submittedMetadata);
+  });
+
+  it('throws if metadata validation fails', async () => {
+    const mockParse = jest.fn().mockImplementation(() => { throw new Error('invalid metadata'); });
+    mockBuildMetadataValidator.mockReturnValue({ parse: mockParse });
+    await expect(confirmUpload(PARAMS)).rejects.toThrow('invalid metadata');
+    expect(mockTransaction).not.toHaveBeenCalled();
   });
 
   it('runs a transaction', async () => {

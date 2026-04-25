@@ -44,6 +44,7 @@ export const confirmUpload = async ({ userId, credentialTypeId, submittedMetadat
       ))
       .limit(1);
 
+    const now = new Date();
     const [upserted] = await tx.insert(userCredentials)
       .values({
         user_id: userId,
@@ -51,7 +52,7 @@ export const confirmUpload = async ({ userId, credentialTypeId, submittedMetadat
         file_key: token.object_key,
         submitted_metadata: submittedMetadata,
         status: 'pending',
-        submitted: new Date(),
+        submitted: now,
       })
       .onConflictDoUpdate({
         target: [userCredentials.user_id, userCredentials.credential_id],
@@ -59,7 +60,7 @@ export const confirmUpload = async ({ userId, credentialTypeId, submittedMetadat
           file_key: token.object_key,
           submitted_metadata: submittedMetadata,
           status: 'pending',
-          submitted: new Date(),
+          submitted: now,
         },
       })
       .returning();
