@@ -11,22 +11,22 @@ const borderColors: Record<Toast['type'], string> = {
 
 const AUTO_DISMISS_MS = 4000;
 
-function ToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: () => void }) {
+function ToastItem({ t, onDismiss }: { t: Toast; onDismiss: () => void }) {
   useEffect(() => {
-    const timer = setTimeout(onDismiss, AUTO_DISMISS_MS);
+    const timer = setTimeout(() => toastStore.dismiss(t.id), AUTO_DISMISS_MS);
     return () => clearTimeout(timer);
-  }, [onDismiss]);
+  }, [t.id]); // only depends on stable id
 
   return (
     <div
-      role="alert"
-      aria-live="polite"
+      role="status"
+      aria-live={t.type === 'error' ? 'assertive' : 'polite'}
       className={[
-        'flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg bg-white border-l-4 min-w-64 max-w-sm',
-        borderColors[toast.type],
+        'pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-lg shadow-lg bg-white border-l-4 min-w-64 max-w-sm',
+        borderColors[t.type],
       ].join(' ')}
     >
-      <p className="flex-1 text-sm text-[var(--color-text)]">{toast.message}</p>
+      <p className="flex-1 text-sm text-[var(--color-text)]">{t.message}</p>
       <button
         onClick={onDismiss}
         aria-label="Dismiss notification"
@@ -46,16 +46,10 @@ export function ToastContainer() {
     return unsubscribe;
   }, []);
 
-  if (toasts.length === 0) return null;
-
   return createPortal(
-    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2">
+    <div className="fixed bottom-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none">
       {toasts.map((t) => (
-        <ToastItem
-          key={t.id}
-          toast={t}
-          onDismiss={() => toastStore.dismiss(t.id)}
-        />
+        <ToastItem key={t.id} t={t} onDismiss={() => toastStore.dismiss(t.id)} />
       ))}
     </div>,
     document.body
