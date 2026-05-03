@@ -20,7 +20,7 @@ export async function clientLoader() {
 }
 
 const createTeamSchema = z.object({
-  name: z.string().min(2, 'Min 2 characters').max(60, 'Max 60 characters'),
+  name: z.string().min(1, 'Required').min(2, 'Min 2 characters').max(60, 'Max 60 characters'),
 });
 
 type CreateTeamForm = z.infer<typeof createTeamSchema>;
@@ -103,7 +103,9 @@ export default function AdminTeamsPage() {
               >
                 {team.name}
               </h2>
-              <p className="text-sm text-[var(--color-text-muted)] mb-3">— members</p>
+              <p className="text-sm text-[var(--color-text-muted)] mb-3">
+                {team.memberCount !== undefined ? `${team.memberCount} member${team.memberCount !== 1 ? 's' : ''}` : '— members'}
+              </p>
               <div className="mb-4">
                 <span className="px-2 py-0.5 rounded-full text-xs bg-slate-100 text-slate-500 border border-slate-200">
                   Compliance —

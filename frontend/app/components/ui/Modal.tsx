@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 interface ModalProps {
@@ -17,6 +17,21 @@ const sizeClasses: Record<NonNullable<ModalProps['size']>, string> = {
 
 export function Modal({ open, onClose, title, children, size = 'md' }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      setMounted(true);
+      // Defer to next frame so transition can fire
+      const raf = requestAnimationFrame(() => setVisible(true));
+      return () => cancelAnimationFrame(raf);
+    } else {
+      setVisible(false);
+      const timer = setTimeout(() => setMounted(false), 150);
+      return () => clearTimeout(timer);
+    }
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -60,11 +75,11 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
     }
   }, [open]);
 
-  if (!open) return null;
+  if (!mounted) return null;
 
   return createPortal(
     <div
-      className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center"
+      className={`fixed inset-0 bg-black/40 z-50 flex items-center justify-center transition-opacity duration-150 ${visible ? 'opacity-100' : 'opacity-0'}`}
       onClick={onClose}
       aria-modal="true"
       role="dialog"
@@ -75,10 +90,8 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
         className={[
           'bg-white rounded-xl shadow-xl p-6 w-full mx-4',
           sizeClasses[size],
-          open
-            ? 'opacity-100 translate-y-0'
-            : 'opacity-0 translate-y-2',
           'transition-all duration-150',
+          visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2',
         ].join(' ')}
         onClick={(e) => e.stopPropagation()}
       >

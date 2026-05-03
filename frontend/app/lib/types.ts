@@ -79,6 +79,7 @@ export interface Team {
   name: string;
   description: string | null;
   createdAt: string;
+  memberCount?: number;
 }
 
 export interface Notification {
