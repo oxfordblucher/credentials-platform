@@ -1,13 +1,14 @@
-let accessToken: string | null = null;
+// Store token on globalThis so it survives vi.resetModules() in tests
+const g = globalThis as typeof globalThis & { __credplat_token?: string | null };
 
 export function getToken(): string | null {
-  return accessToken;
+  return g.__credplat_token ?? null;
 }
 
 export function setToken(token: string): void {
-  accessToken = token;
+  g.__credplat_token = token;
 }
 
 export function clearToken(): void {
-  accessToken = null;
+  g.__credplat_token = null;
 }
