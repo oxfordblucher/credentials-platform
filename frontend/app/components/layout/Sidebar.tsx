@@ -1,5 +1,62 @@
 import { NavLink, useNavigate } from 'react-router';
+import { useState, useEffect } from 'react';
 import { useAuth } from '~/lib/auth/context';
+import { listTeams } from '~/lib/api/teams';
+import type { Team } from '~/lib/types';
+
+// Module-level cache — persists across renders/navigations
+let teamsCache: Team[] | null = null;
+
+function TeamDisclosure({ team }: { team: Team }) {
+  const [open, setOpen] = useState(false);
+
+  const links = [
+    { label: 'Submissions', to: `/teams/${team.id}/submissions` },
+    { label: 'Compliance', to: `/teams/${team.id}/compliance` },
+    { label: 'Requirements', to: `/teams/${team.id}/requirements` },
+  ];
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-md text-sm transition-colors hover:bg-[var(--color-sidebar-hover)]"
+        style={{ color: '#c9d0db' }}
+      >
+        <span className="truncate">{team.name}</span>
+        {/* Chevron rotates when open */}
+        <svg
+          className={`w-3 h-3 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <div
+        className="overflow-hidden transition-all duration-200"
+        style={{ maxHeight: open ? `${links.length * 40}px` : '0px' }}
+      >
+        {links.map(link => (
+          <NavLink
+            key={link.to}
+            to={link.to}
+            className={({ isActive }) =>
+              `flex items-center pl-6 pr-3 py-2 rounded-md text-sm transition-colors ${
+                isActive ? 'border-l-2 pl-[22px]' : 'hover:bg-[var(--color-sidebar-hover)]'
+              }`
+            }
+            style={({ isActive }) => ({
+              color: isActive ? 'var(--color-accent)' : '#9ca3af',
+              borderColor: isActive ? 'var(--color-accent)' : 'transparent',
+            })}
+          >
+            {link.label}
+          </NavLink>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 interface NavItem {
   label: string;
@@ -11,6 +68,24 @@ export function Sidebar() {
   const navigate = useNavigate();
 
   const isAdminOrOwner = user?.orgRole === 'admin' || user?.orgRole === 'owner';
+
+  const [teams, setTeams] = useState<Team[]>(() => teamsCache ?? []);
+  const [loadingTeams, setLoadingTeams] = useState(teamsCache === null);
+
+  useEffect(() => {
+    if (teamsCache !== null) return; // already loaded
+    listTeams()
+      .then(data => {
+        teamsCache = data.teams;
+        setTeams(data.teams);
+      })
+      .catch(() => {
+        // silently fail — teams section just won't show
+      })
+      .finally(() => setLoadingTeams(false));
+  }, []); // empty deps — run once on first mount
+
+  void loadingTeams; // suppress unused variable warning
 
   async function handleLogout() {
     await logout();
@@ -86,6 +161,18 @@ export function Sidebar() {
               >
                 {item.label}
               </NavLink>
+            ))}
+          </div>
+        )}
+
+        {teams.length > 0 && (
+          <div className="pt-4">
+            <p className="px-3 pb-2 text-xs font-medium uppercase tracking-widest font-mono-label"
+               style={{ color: '#4b5563' }}>
+              Teams
+            </p>
+            {teams.map(team => (
+              <TeamDisclosure key={team.id} team={team} />
             ))}
           </div>
         )}
