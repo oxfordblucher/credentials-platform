@@ -98,3 +98,26 @@ export interface ApiItemResponse<T> {
   message: string;
   data: T;
 }
+
+export interface TeamMember {
+  userId: string;
+  teamId: string;
+  role: 'manager' | 'member';
+  user: Pick<AuthUser, 'id' | 'firstName' | 'lastName' | 'email'>;
+  joinedAt: string;
+}
+
+export interface Invite {
+  id: string;
+  email: string;
+  teamId: string;
+  role: 'manager' | 'member';
+  expiresAt: string;
+  used: boolean;
+}
+
+export interface CreateInvitePayload {
+  email: string;
+  teamId: string;
+  role: 'manager' | 'member';
+}
