@@ -9,6 +9,7 @@ export default [
   ]),
   layout('routes/_app.tsx', [
     route('dashboard', 'routes/_app.dashboard.tsx'),
+    route('admin/credential-types', 'routes/_app.admin.credential-types.tsx'),
     route('admin/teams', 'routes/_app.admin.teams.tsx'),
     route('admin/teams/:teamId', 'routes/_app.admin.teams.$teamId.tsx'),
   ]),

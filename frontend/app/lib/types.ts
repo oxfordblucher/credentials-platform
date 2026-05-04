@@ -20,7 +20,7 @@ export interface AuthUser {
 export interface MetadataField {
   key: string;
   label: string;
-  type: 'text' | 'date' | 'number';
+  type: 'string' | 'date' | 'number';
   required: boolean;
 }
 
@@ -34,8 +34,21 @@ export interface CredentialType {
   name: string;
   description: string | null;
   metadataSchema: MetadataSchema;
-  isActive: boolean;
+  schemaVersion: number;
+  deactivatedAt: string | null;
   createdAt: string;
+}
+
+export interface CreateCredentialTypePayload {
+  name: string;
+  description?: string;
+  metadataSchema: MetadataSchema;
+}
+
+export interface UpdateCredentialTypePayload {
+  name?: string;
+  description?: string;
+  metadataSchema?: MetadataSchema;
 }
 
 export interface RejectionReason {
