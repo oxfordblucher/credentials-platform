@@ -23,3 +23,12 @@ html {
 .font-mono-label {
   font-family: 'DM Mono', monospace;
 }
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.status-pulse {
+  animation: status-pulse 2s ease-in-out infinite;
+}

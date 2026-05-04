@@ -75,10 +75,11 @@ export interface UserCredential {
 export interface CredentialAuditEntry {
   id: string;
   credentialId: string;
+  fromStatus: CredStatus | null;
+  toStatus: CredStatus;
   actorId: string;
-  action: string;
-  details: Record<string, unknown> | null;
-  createdAt: string;
+  timestamp: string;
+  notes?: string;
 }
 
 export interface TeamMembership {
@@ -134,4 +135,23 @@ export interface CreateInvitePayload {
   email: string;
   teamId: string;
   role: 'manager' | 'member';
+}
+
+export interface MemberCredential {
+  credentialType: CredentialType;
+  userCredential: UserCredential | null;
+  status: CredStatus | 'missing';
+  teamName: string;
+  isExpiringSoon: boolean;
+}
+
+export interface UploadUrlResponse {
+  uploadUrl: string;
+  objectKey: string;
+  expiresIn: number;
+}
+
+export interface ConfirmUploadPayload {
+  objectKey: string;
+  submittedMetadata: Record<string, unknown>;
 }
