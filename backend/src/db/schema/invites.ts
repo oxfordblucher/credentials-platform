@@ -3,11 +3,12 @@ import { sql } from "drizzle-orm";
 import { roleEnum } from "./enums.js";
 import { users } from "./users.js";
 import { teams } from "./teams.js";
+import { orgs } from "./orgs.js";
 
 export const invites = pgTable("invites", {
   id: uuid().defaultRandom().primaryKey(),
   email: varchar({ length: 255 }).unique().notNull(),
-  org_id: uuid().notNull().references(() => users.id),
+  org_id: uuid().notNull().references(() => orgs.id),
   team_id: uuid().notNull().references(() => teams.id),
   role: roleEnum(),
   token: text().notNull(),
