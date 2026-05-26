@@ -98,7 +98,7 @@ export function Sidebar() {
   const adminLinks: NavItem[] = [
     { label: 'Credential Types', to: '/admin/credential-types' },
     { label: 'Teams', to: '/admin/teams' },
-    { label: 'Org Compliance', to: '/admin/compliance' },
+    { label: 'Compliance', to: '/admin/compliance' },
   ];
 
   return (
