@@ -14,5 +14,8 @@ export default [
     route('admin/credential-types', 'routes/_app.admin.credential-types.tsx'),
     route('admin/teams', 'routes/_app.admin.teams.tsx'),
     route('admin/teams/:teamId', 'routes/_app.admin.teams.$teamId.tsx'),
+    route('admin/compliance', 'routes/_app.admin.compliance.tsx'),
+    route('manager/teams/:teamId/submissions', 'routes/_app.manager.teams.$teamId.submissions.tsx'),
+    route('manager/teams/:teamId/compliance', 'routes/_app.manager.teams.$teamId.compliance.tsx'),
   ]),
 ] satisfies RouteConfig;
