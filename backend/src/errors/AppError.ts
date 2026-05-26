@@ -31,3 +31,10 @@ export class RateLimitError extends AppError {
     this.name = "RateLimitError";
   }
 }
+
+export class ConflictError extends AppError {
+  constructor(message = 'Conflict', log?: string) {
+    super(409, message, log);
+    this.name = 'ConflictError';
+  }
+}

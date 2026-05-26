@@ -1,7 +1,10 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { userCredentials, credentialAuditLog, credEnum } from '../db/schema/index.js';
-import { NotFoundError } from '../errors/AppError.js';
+import { userCredentials, credentialAuditLog, credEnum, credentialTypes } from '../db/schema/index.js';
+import { ConflictError } from '../errors/AppError.js';
+import { computeNextAlertAt } from '../utils/expirationAlerts.js';
+import { evtEmitter } from '../events/emitter.js';
+import { Events } from '../events/event.js';
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
@@ -36,20 +39,24 @@ export const verifyCredential = async ({
   expiration_date,
   verified_metadata,
 }: ReviewBase & { expiration_date: Date; verified_metadata?: Record<string, unknown> }) => {
-  return db.transaction(async (tx) => {
-    const [existing] = await tx.select({ status: userCredentials.status })
-      .from(userCredentials)
-      .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
-      .limit(1);
+  const [existing] = await db.select({ status: userCredentials.status })
+    .from(userCredentials)
+    .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
+    .limit(1);
 
-    if (!existing) throw new NotFoundError(`Credential ${credentialTypeId} for user ${userId} not found`);
+  const VALID_FROM_VERIFY = ['pending'];
+  if (!existing || !VALID_FROM_VERIFY.includes(existing.status)) {
+    throw new ConflictError(`Cannot verify a credential with status '${existing?.status ?? 'not found'}'`);
+  }
 
-    const [updated] = await tx.update(userCredentials)
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx.update(userCredentials)
       .set({
         status: 'active',
         verified: sql`NOW()`,
         verifier_id: actorId,
         expiration_date,
+        next_alert_at: expiration_date ? computeNextAlertAt(expiration_date) : null,
         verified_metadata: verified_metadata ?? null,
         rejection_reason_id: null,
         review_notes: null,
@@ -67,8 +74,14 @@ export const verifyCredential = async ({
       toStatus: 'active',
     });
 
-    return updated;
+    return row;
   });
+
+  const [credType] = await db.select({ name: credentialTypes.name })
+    .from(credentialTypes).where(eq(credentialTypes.id, credentialTypeId)).limit(1);
+  evtEmitter.emit(Events.CREDENTIAL_VERIFIED, { userId, credId: credentialTypeId, credName: credType?.name ?? '' });
+
+  return updated;
 };
 
 export const rejectCredential = async ({
@@ -78,15 +91,18 @@ export const rejectCredential = async ({
   rejection_reason_id,
   review_notes,
 }: ReviewBase & { rejection_reason_id: string; review_notes?: string }) => {
-  return db.transaction(async (tx) => {
-    const [existing] = await tx.select({ status: userCredentials.status })
-      .from(userCredentials)
-      .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
-      .limit(1);
+  const [existing] = await db.select({ status: userCredentials.status })
+    .from(userCredentials)
+    .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
+    .limit(1);
 
-    if (!existing) throw new NotFoundError(`Credential ${credentialTypeId} for user ${userId} not found`);
+  const VALID_FROM_REJECT = ['pending'];
+  if (!existing || !VALID_FROM_REJECT.includes(existing.status)) {
+    throw new ConflictError(`Cannot reject a credential with status '${existing?.status ?? 'not found'}'`);
+  }
 
-    const [updated] = await tx.update(userCredentials)
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx.update(userCredentials)
       .set({ status: 'rejected', rejection_reason_id, review_notes: review_notes ?? null })
       .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
       .returning();
@@ -100,8 +116,20 @@ export const rejectCredential = async ({
       notes: review_notes,
     });
 
-    return updated;
+    return row;
   });
+
+  const [credType] = await db.select({ name: credentialTypes.name })
+    .from(credentialTypes).where(eq(credentialTypes.id, credentialTypeId)).limit(1);
+  evtEmitter.emit(Events.CREDENTIAL_REJECTED, {
+    userId,
+    credId: credentialTypeId,
+    credName: credType?.name ?? '',
+    rejectionReasonId: rejection_reason_id,
+    reviewNotes: review_notes,
+  });
+
+  return updated;
 };
 
 export const revokeCredential = async ({
@@ -110,15 +138,18 @@ export const revokeCredential = async ({
   credentialTypeId,
   reason,
 }: ReviewBase & { reason: string }) => {
-  return db.transaction(async (tx) => {
-    const [existing] = await tx.select({ status: userCredentials.status })
-      .from(userCredentials)
-      .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
-      .limit(1);
+  const [existing] = await db.select({ status: userCredentials.status })
+    .from(userCredentials)
+    .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
+    .limit(1);
 
-    if (!existing) throw new NotFoundError(`Credential ${credentialTypeId} for user ${userId} not found`);
+  const VALID_FROM_REVOKE = ['active'];
+  if (!existing || !VALID_FROM_REVOKE.includes(existing.status)) {
+    throw new ConflictError(`Cannot revoke a credential with status '${existing?.status ?? 'not found'}'`);
+  }
 
-    const [updated] = await tx.update(userCredentials)
+  const updated = await db.transaction(async (tx) => {
+    const [row] = await tx.update(userCredentials)
       .set({ status: 'revoked', revocation: sql`NOW()`, revoker_id: actorId, review_notes: reason })
       .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
       .returning();
@@ -132,6 +163,12 @@ export const revokeCredential = async ({
       notes: reason,
     });
 
-    return updated;
+    return row;
   });
+
+  const [credType] = await db.select({ name: credentialTypes.name })
+    .from(credentialTypes).where(eq(credentialTypes.id, credentialTypeId)).limit(1);
+  evtEmitter.emit(Events.CREDENTIAL_REVOKED, { userId, credId: credentialTypeId, credName: credType?.name ?? '' });
+
+  return updated;
 };

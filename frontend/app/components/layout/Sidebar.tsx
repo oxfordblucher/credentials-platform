@@ -11,9 +11,8 @@ function TeamDisclosure({ team }: { team: Team }) {
   const [open, setOpen] = useState(false);
 
   const links = [
-    { label: 'Submissions', to: `/teams/${team.id}/submissions` },
-    { label: 'Compliance', to: `/teams/${team.id}/compliance` },
-    { label: 'Requirements', to: `/teams/${team.id}/requirements` },
+    { label: 'Submissions', to: `/manager/teams/${team.id}/submissions` },
+    { label: 'Compliance', to: `/manager/teams/${team.id}/compliance` },
   ];
 
   return (
@@ -99,7 +98,7 @@ export function Sidebar() {
   const adminLinks: NavItem[] = [
     { label: 'Credential Types', to: '/admin/credential-types' },
     { label: 'Teams', to: '/admin/teams' },
-    { label: 'Org Compliance', to: '/admin/compliance' },
+    { label: 'Compliance', to: '/admin/compliance' },
   ];
 
   return (

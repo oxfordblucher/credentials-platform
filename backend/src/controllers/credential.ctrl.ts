@@ -36,38 +36,6 @@ export const submitCredential = async (req: Request, res: Response, next: NextFu
   }
 }
 
-export const verifyCredential = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.user!;
-    const { userId, credId } = req.params as { userId: string, credId: string };
-    const verified = await updateVerifyCreds({ mgrId: id, userId, credId });
-
-    res.status(200).json({
-      message: "Success",
-      verified: verified
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}
-
-export const revokeCredential = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.user!;
-    const { credId, userId } = req.params as { credId: string, userId: string };
-    const revoked = await deleteCredentials({ mgrId: id, userId, credId });
-
-    res.status(200).json({
-      message: "Success",
-      revoked: revoked
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}
-
 export const getTeamCreds = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { teamId } = req.params as { teamId: string };
@@ -101,8 +69,7 @@ export const addTeamCred = async (req: Request, res: Response, next: NextFunctio
 
 export const removeTeamCred = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId } = req.params as { teamId: string };
-    const { credId } = req.body;
+    const { teamId, credId } = req.params as { teamId: string; credId: string; };
     const deleted = await deleteTeamCred(teamId, credId);
 
     res.status(200).json({
