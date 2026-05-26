@@ -7,6 +7,8 @@ import {
   editCredentialType,
   removeCredentialType
 } from '../controllers/credentialType.ctrl.js';
+import { getRejectionReasons } from '../controllers/rejectionReasons.ctrl.js';
+import { getOrgComplianceCtrl } from '../controllers/compliance.ctrl.js';
 
 const router = Router();
 
@@ -15,6 +17,8 @@ router.post('/', setupOrg);
 router.use(authenticate);
 
 router.get('/', getTeams);
+router.get('/rejection-reasons', getRejectionReasons);
+router.get('/compliance', requireAdmin, getOrgComplianceCtrl);
 
 router.post('/credential-types', requireAdmin, addCredentialType);
 router.get('/credential-types', requireAdmin, getCredentialTypes);
