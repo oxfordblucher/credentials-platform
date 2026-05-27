@@ -1,7 +1,7 @@
 import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { userCredentials, credentialAuditLog, credEnum, credentialTypes } from '../db/schema/index.js';
-import { ConflictError } from '../errors/AppError.js';
+import { userCredentials, credentialAuditLog, credEnum, credentialTypes, teamMembers, teamCredentials } from '../db/schema/index.js';
+import { ConflictError, PermissionError } from '../errors/AppError.js';
 import { computeNextAlertAt } from '../utils/expirationAlerts.js';
 import { evtEmitter } from '../events/emitter.js';
 import { Events } from '../events/event.js';
@@ -30,15 +30,34 @@ const writeStatusChange = async (tx: Tx, params: WriteStatusChangeParams) => {
   });
 };
 
-type ReviewBase = { actorId: string; userId: string; credentialTypeId: string };
+type ReviewBase = { actorId: string; userId: string; credentialTypeId: string; teamId: string };
+
+const assertTeamScope = async (userId: string, teamId: string, credentialTypeId: string) => {
+  const [member, teamCred] = await Promise.all([
+    db.select({ user_id: teamMembers.user_id })
+      .from(teamMembers)
+      .where(and(eq(teamMembers.user_id, userId), eq(teamMembers.team_id, teamId)))
+      .limit(1),
+    db.select({ team_id: teamCredentials.team_id })
+      .from(teamCredentials)
+      .where(and(eq(teamCredentials.team_id, teamId), eq(teamCredentials.credential_id, credentialTypeId)))
+      .limit(1),
+  ]);
+
+  if (!member[0]) throw new PermissionError('User is not a member of the specified team');
+  if (!teamCred[0]) throw new PermissionError('Credential type is not assigned to the specified team');
+};
 
 export const verifyCredential = async ({
   actorId,
   userId,
   credentialTypeId,
+  teamId,
   expiration_date,
   verified_metadata,
 }: ReviewBase & { expiration_date: Date; verified_metadata?: Record<string, unknown> }) => {
+  await assertTeamScope(userId, teamId, credentialTypeId);
+
   const [existing] = await db.select({ status: userCredentials.status })
     .from(userCredentials)
     .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
@@ -88,9 +107,12 @@ export const rejectCredential = async ({
   actorId,
   userId,
   credentialTypeId,
+  teamId,
   rejection_reason_id,
   review_notes,
 }: ReviewBase & { rejection_reason_id: string; review_notes?: string }) => {
+  await assertTeamScope(userId, teamId, credentialTypeId);
+
   const [existing] = await db.select({ status: userCredentials.status })
     .from(userCredentials)
     .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))
@@ -136,8 +158,11 @@ export const revokeCredential = async ({
   actorId,
   userId,
   credentialTypeId,
+  teamId,
   reason,
 }: ReviewBase & { reason: string }) => {
+  await assertTeamScope(userId, teamId, credentialTypeId);
+
   const [existing] = await db.select({ status: userCredentials.status })
     .from(userCredentials)
     .where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credentialTypeId)))

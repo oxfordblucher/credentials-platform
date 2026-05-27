@@ -6,11 +6,12 @@ import { NotFoundError } from "../errors/AppError.js";
 import { genInvite } from "../utils/token.js";
 import { OrgRole } from "../types/types.js";
 
-export const createInvites = async (inviteData: InviteInput, senderId: string) => {
+export const createInvites = async (inviteData: InviteInput, senderId: string, orgId: string) => {
   const { emails, ...newInvite } = inviteData;
   const result = await db.insert(invites).values(
     emails.map(email => ({
       ...newInvite,
+      org_id: orgId,
       email: email,
       inviter_id: senderId,
       token: genInvite()

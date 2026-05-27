@@ -4,9 +4,9 @@ import { createInvites, fetchInvites, updateInvite, deleteInvite } from '../serv
 
 export const sendInvites = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.user!;
+    const { id, orgId } = req.user!;
     const validated = inviteSchema.parse(req.body);
-    const newInvites = await createInvites(validated, id);
+    const newInvites = await createInvites(validated, id, orgId);
 
     res.status(201).json({
       message: "Invites sent successfully",

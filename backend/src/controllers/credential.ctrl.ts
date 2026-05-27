@@ -4,8 +4,10 @@ import { userCredSchema, newCredSchema } from '../utils/zod.js';
 
 export const getCredentials = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.userId as string | undefined ?? req.user!.id;
-    const credentials = await readCredentials(id);
+    const paramUserId = req.params.userId as string | undefined;
+    const { id: selfId, orgId } = req.user!;
+    const id = paramUserId ?? selfId;
+    const credentials = await readCredentials(id, paramUserId !== undefined ? orgId : undefined);
 
     res.status(200).json({
       message: "Success",

@@ -41,7 +41,6 @@ export type LoginInput = z.infer<typeof loginSchema>
 
 export const inviteSchema = z.object({
   emails: z.array(z.email()).min(1),
-  org_id: z.string(),
   team_id: z.string(),
   role: z.enum(["manager", "member"])
 });

@@ -1,13 +1,22 @@
-import { credentialTypes, NewUserCred, teamCredentials, userCredentials } from "../db/schema/index.js";
+import { credentialTypes, NewUserCred, teamCredentials, userCredentials, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { sql, and, eq } from "drizzle-orm";
 import { ManagedCredParams } from "../types/types.js";
 import { Events } from "../events/event.js";
 import { evtEmitter } from "../events/emitter.js";
 import { newCredInput } from "../utils/zod.js";
-import { NotFoundError} from "../errors/AppError.js";
+import { NotFoundError, PermissionError } from "../errors/AppError.js";
 
-export const readCredentials = async (userId: string) => {
+export const readCredentials = async (userId: string, actorOrgId?: string) => {
+  if (actorOrgId !== undefined) {
+    const [member] = await db.select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.org_id, actorOrgId)))
+      .limit(1);
+
+    if (!member) throw new PermissionError('Target user does not belong to your organisation');
+  }
+
   const result = await db.query.credentialTypes.findMany({
     with: {
       users: {
