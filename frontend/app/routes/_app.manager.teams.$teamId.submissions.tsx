@@ -30,7 +30,7 @@ interface Submission {
 export async function clientLoader({ params }: { params: { teamId: string } }) {
   const [submissionsRes, reasonsRes] = await Promise.all([
     apiFetch<{ submissions: Submission[] }>(`/api/teams/${params.teamId}/submissions`),
-    apiFetch<{ reasons: RejectionReason[] }>('/api/orgs/rejection-reasons'),
+    apiFetch<{ reasons: RejectionReason[] }>('/api/credentials/rejection-reasons'),
   ]);
   return {
     teamId: params.teamId,
