@@ -13,6 +13,6 @@ export interface ProfileResponse {
 }
 
 export async function getMyProfile(): Promise<ProfileResponse> {
-  const res = await apiFetch<{ profile: ProfileResponse }>('/profiles');
+  const res = await apiFetch<{ profile: ProfileResponse }>('/me');
   return res.profile;
 }
