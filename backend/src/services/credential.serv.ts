@@ -1,6 +1,6 @@
-import { credentialTypes, NewUserCred, teamCredentials, userCredentials, users } from "../db/schema/index.js";
+import { credentialTypes, NewUserCred, teamCredentials, teamMembers, userCredentials, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
-import { sql, and, eq } from "drizzle-orm";
+import { sql, and, eq, isNull } from "drizzle-orm";
 import { ManagedCredParams } from "../types/types.js";
 import { Events } from "../events/event.js";
 import { evtEmitter } from "../events/emitter.js";
@@ -17,23 +17,59 @@ export const readCredentials = async (userId: string, actorOrgId?: string) => {
     if (!member) throw new PermissionError('Target user does not belong to your organisation');
   }
 
-  const result = await db.query.credentialTypes.findMany({
-    with: {
-      users: {
-        where: {
-          user_id: userId
-        },
-        columns: {
-          verifier_id: true,
-          submitted: true,
-          verified: true,
-          expiration: true
-        }
-      }
-    }
-  })
+  const rows = await db
+    .selectDistinctOn([credentialTypes.id], {
+      id: credentialTypes.id,
+      name: credentialTypes.name,
+      description: credentialTypes.description,
+      metadata_schema: credentialTypes.metadata_schema,
+      uc_status: userCredentials.status,
+      uc_submitted: userCredentials.submitted,
+      uc_verified: userCredentials.verified,
+      uc_file_key: userCredentials.file_key,
+      expiration_date: userCredentials.expiration_date,
+      next_alert_at: userCredentials.next_alert_at,
+    })
+    .from(teamMembers)
+    .innerJoin(teamCredentials, eq(teamCredentials.team_id, teamMembers.team_id))
+    .innerJoin(
+      credentialTypes,
+      and(
+        eq(credentialTypes.id, teamCredentials.credential_id),
+        isNull(credentialTypes.deactivated_at),
+      ),
+    )
+    .leftJoin(
+      userCredentials,
+      and(
+        eq(userCredentials.user_id, userId),
+        eq(userCredentials.credential_id, credentialTypes.id),
+      ),
+    )
+    .where(eq(teamMembers.user_id, userId))
+    .orderBy(credentialTypes.id);
 
-  return result;
+  return rows.map(row => ({
+    credential_type: {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      metadata_schema: row.metadata_schema,
+    },
+    userCredential: row.uc_status !== null
+      ? {
+          status: row.uc_status,
+          submitted: row.uc_submitted,
+          verified: row.uc_verified,
+          file_key: row.uc_file_key,
+          expiration_date: row.expiration_date,
+          next_alert_at: row.next_alert_at,
+        }
+      : null,
+    status: row.uc_status ?? 'missing',
+    expiration_date: row.expiration_date,
+    next_alert_at: row.next_alert_at,
+  }));
 }
 
 export const createUserCreds = async (credInput: NewUserCred) => {
