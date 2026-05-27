@@ -84,7 +84,14 @@ export const readTeamCreds = async (teamId: string) => {
   return result;
 }
 
-export const createTeamCred = async (teamId: string, credId: string) => {
+export const createTeamCred = async (teamId: string, credId: string, orgId: string) => {
+  const [credType] = await db.select({ id: credentialTypes.id })
+    .from(credentialTypes)
+    .where(and(eq(credentialTypes.id, credId), eq(credentialTypes.org_id, orgId), isNull(credentialTypes.deactivated_at)))
+    .limit(1);
+
+  if (!credType) throw new NotFoundError('Credential type not found or not active in this org');
+
   await db.insert(teamCredentials).values({
     team_id: teamId,
     credential_id: credId

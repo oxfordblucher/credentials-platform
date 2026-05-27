@@ -1,4 +1,4 @@
-import { notifications, teams, teamMembers, users, userCredentials, teamCredentials } from "../db/schema/index.js";
+import { notifications, teams, teamMembers, users, userCredentials, teamCredentials, credentialTypes } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { sql, eq, and, notExists } from "drizzle-orm";
 import { EventPayloads, Events } from "../events/event.js";
@@ -71,19 +71,97 @@ export const notifyCredSubmit = async ({ userId, credId, credName }: EventPayloa
 }
 
 export const notifyCredVerified = async ({ userId, credId, credName }: EventPayloads[typeof Events.CREDENTIAL_VERIFIED]) => {
-
+  await db.insert(notifications).values({
+    user_id: userId,
+    payload: {
+      type: "CREDENTIAL_VERIFIED",
+      message: `Your ${credName} credential has been verified`,
+      data: { credId, credName }
+    }
+  });
 }
 
 export const notifyCredRevoked = async ({ userId, credId, credName }: EventPayloads[typeof Events.CREDENTIAL_REVOKED]) => {
+  await db.insert(notifications).values({
+    user_id: userId,
+    payload: {
+      type: "CREDENTIAL_REVOKED",
+      message: `Your ${credName} credential has been revoked`,
+      data: { credId, credName }
+    }
+  });
+}
 
+export const notifyCredExpiring = async ({ userId, credId, daysUntilExpiry }: EventPayloads[typeof Events.CREDENTIAL_EXPIRING]) => {
+  const [[credRow], [memberRow], managerRows] = await Promise.all([
+    db.select({ name: credentialTypes.name })
+      .from(credentialTypes)
+      .where(eq(credentialTypes.id, credId))
+      .limit(1),
+
+    db.select({ first: users.first, last: users.last })
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1),
+
+    db.select({ manager_id: teams.manager_id })
+      .from(teamMembers)
+      .innerJoin(teams, eq(teams.id, teamMembers.team_id))
+      .innerJoin(teamCredentials, and(
+        eq(teamCredentials.team_id, teams.id),
+        eq(teamCredentials.credential_id, credId)
+      ))
+      .where(eq(teamMembers.user_id, userId)),
+  ]);
+
+  if (!credRow || !memberRow) return;
+
+  const credName = credRow.name;
+  const memberName = `${memberRow.first} ${memberRow.last}`;
+
+  const memberNotification = {
+    user_id: userId,
+    payload: {
+      type: "CREDENTIAL_EXPIRING",
+      message: `Your ${credName} expires in ${daysUntilExpiry} days`,
+      data: { credId, credName, daysUntilExpiry }
+    }
+  };
+
+  const managerNotifications = managerRows
+    .filter(m => m.manager_id !== null)
+    .map(m => ({
+      user_id: m.manager_id!,
+      payload: {
+        type: "CREDENTIAL_EXPIRING",
+        message: `${memberName}'s ${credName} expires in ${daysUntilExpiry} days`,
+        data: { userId, credId, credName, daysUntilExpiry }
+      }
+    }));
+
+  await db.insert(notifications).values([memberNotification, ...managerNotifications]);
 }
 
 export const notifyInvitee = async () => {
 
 }
 
-export const notifyInviter = async () => {
+export const notifyInviter = async ({ teamId, userId }: EventPayloads[typeof Events.INVITE_ACCEPTED]) => {
+  const [team] = await db.select({ manager_id: teams.manager_id })
+    .from(teams)
+    .where(eq(teams.id, teamId))
+    .limit(1);
 
+  if (!team?.manager_id) return;
+
+  await db.insert(notifications).values({
+    user_id: team.manager_id,
+    payload: {
+      type: "INVITE_ACCEPTED",
+      message: "A user has accepted your invite and joined the team",
+      data: { teamId, userId }
+    }
+  });
 }
 
 export const fetchUserNotifications = async (userId: string) => {

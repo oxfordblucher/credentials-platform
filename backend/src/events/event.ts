@@ -16,6 +16,6 @@ export type EventPayloads = {
   [Events.CREDENTIAL_REVOKED]: { userId: string, credId: string, credName: string };
   [Events.CREDENTIAL_EXPIRING]: { userId: string, credId: string, daysUntilExpiry: number };
   [Events.CREDENTIAL_REJECTED]: { userId: string; credId: string; credName: string; rejectionReasonId: string; reviewNotes?: string };
-  [Events.INVITE_CREATED]: { teamId: string, userId: string };
+  [Events.INVITE_CREATED]: { teamId: string; inviteeEmail: string; inviterName: string; inviteToken: string };
   [Events.INVITE_ACCEPTED]: { teamId: string, userId: string };
 }

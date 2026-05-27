@@ -36,8 +36,9 @@ export const getTeamCreds = async (req: Request, res: Response, next: NextFuncti
 export const addTeamCred = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { teamId } = req.params as { teamId: string };
-    const { credId } = req.body;
-    const credential = await createTeamCred(teamId, credId);
+    const { orgId } = req.user!;
+    const { credential_type_id } = req.body;
+    const credential = await createTeamCred(teamId, credential_type_id, orgId);
 
     res.status(201).json({
       message: "Success",

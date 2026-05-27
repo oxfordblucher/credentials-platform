@@ -44,3 +44,15 @@ export const credentialExpiring = (memberName: string, credentialName: string, d
     'Credential Expiring Soon',
     `Hi ${memberName}, your <strong>${credentialName}</strong> credential expires in <strong>${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}</strong>. Please submit an updated credential before it expires.`,
   );
+
+export const credentialExpiringManager = (managerName: string, memberName: string, credentialName: string, daysUntilExpiry: number) =>
+  layout(
+    'Team Member Credential Expiring Soon',
+    `Hi ${managerName}, <strong>${memberName}</strong>'s <strong>${credentialName}</strong> credential expires in <strong>${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}</strong>. Please follow up to ensure it is renewed in time.`,
+  );
+
+export const inviteCreated = (inviteeEmail: string, inviterName: string, teamName: string, acceptUrl: string) =>
+  layout(
+    "You've been invited to join a team on CredPlat",
+    `Hi ${inviteeEmail}, <strong>${inviterName}</strong> has invited you to join the team <strong>${teamName}</strong> on CredPlat. <a href="${acceptUrl}" style="color: #2563eb;">Accept your invitation</a> before it expires.`,
+  );
