@@ -1,7 +1,7 @@
 import { db } from "../db/index.js";
 import { sessions, users, NewUser } from "../db/schema/index.js";
-import { eq } from "drizzle-orm";
-import { AppError } from "../errors/AppError.js";
+import { and, eq } from "drizzle-orm";
+import { AppError, ConflictError, NotFoundError } from "../errors/AppError.js";
 import { Transaction } from "../types/types.js";
 import { encryptPW, verifyPW } from "../utils/encrypt.js";
 import { deleteSessions } from "./session.serv.js";
@@ -89,4 +89,19 @@ export const updatePassword = async (userId: string, password: string, newPass: 
     await tx.update(users).set({ password: hashedPassword }).where(eq(users.id, userId));
     await deleteSessions(userId, undefined, tx);
   })
+}
+
+export const promoteToOwner = async (actorId: string, targetUserId: string, orgId: string): Promise<void> => {
+  await db.transaction(async (tx: Transaction) => {
+    const [target] = await tx.select({ id: users.id, org_role: users.org_role })
+      .from(users)
+      .where(and(eq(users.id, targetUserId), eq(users.org_id, orgId)))
+      .limit(1);
+
+    if (!target) throw new NotFoundError('Target user not found in this organisation');
+    if (target.org_role !== 'admin') throw new ConflictError('Target user must currently be an admin to be promoted to owner');
+
+    await tx.update(users).set({ org_role: 'admin' }).where(and(eq(users.id, actorId), eq(users.org_id, orgId)));
+    await tx.update(users).set({ org_role: 'owner' }).where(and(eq(users.id, targetUserId), eq(users.org_id, orgId)));
+  });
 }
