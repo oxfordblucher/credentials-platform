@@ -18,7 +18,7 @@ export const getCredentials = async (req: Request, res: Response, next: NextFunc
   }
 }
 
-export const getTeamCreds = async (req: Request, res: Response, next: NextFunction) => {
+export const getTeamRequirementsCtrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { teamId } = req.params as { teamId: string };
     const credentials = await readTeamCreds(teamId);
@@ -33,7 +33,7 @@ export const getTeamCreds = async (req: Request, res: Response, next: NextFuncti
   }
 }
 
-export const addTeamCred = async (req: Request, res: Response, next: NextFunction) => {
+export const addTeamRequirementCtrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { teamId } = req.params as { teamId: string };
     const { orgId } = req.user!;
@@ -50,10 +50,10 @@ export const addTeamCred = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
-export const removeTeamCred = async (req: Request, res: Response, next: NextFunction) => {
+export const removeTeamRequirementCtrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId, credId } = req.params as { teamId: string; credId: string; };
-    const deleted = await deleteTeamCred(teamId, credId);
+    const { teamId, credentialTypeId } = req.params as { teamId: string; credentialTypeId: string };
+    const deleted = await deleteTeamCred(teamId, credentialTypeId);
 
     res.status(200).json({
       message: "Success",
