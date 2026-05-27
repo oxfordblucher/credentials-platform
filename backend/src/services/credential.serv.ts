@@ -1,71 +1,73 @@
-import { credentialTypes, NewUserCred, teamCredentials, userCredentials } from "../db/schema/index.js";
+import { credentialTypes, teamCredentials, teamMembers, userCredentials, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
-import { sql, and, eq } from "drizzle-orm";
-import { ManagedCredParams } from "../types/types.js";
+import { and, eq, isNull } from "drizzle-orm";
 import { Events } from "../events/event.js";
 import { evtEmitter } from "../events/emitter.js";
-import { newCredInput } from "../utils/zod.js";
-import { NotFoundError} from "../errors/AppError.js";
+import { NotFoundError, PermissionError } from "../errors/AppError.js";
 
-export const readCredentials = async (userId: string) => {
-  const result = await db.query.credentialTypes.findMany({
-    with: {
-      users: {
-        where: {
-          user_id: userId
-        },
-        columns: {
-          verifier_id: true,
-          submitted: true,
-          verified: true,
-          expiration: true
+export const readCredentials = async (userId: string, actorOrgId?: string) => {
+  if (actorOrgId !== undefined) {
+    const [member] = await db.select({ id: users.id })
+      .from(users)
+      .where(and(eq(users.id, userId), eq(users.org_id, actorOrgId)))
+      .limit(1);
+
+    if (!member) throw new PermissionError('Target user does not belong to your organisation');
+  }
+
+  const rows = await db
+    .selectDistinctOn([credentialTypes.id], {
+      id: credentialTypes.id,
+      name: credentialTypes.name,
+      description: credentialTypes.description,
+      metadata_schema: credentialTypes.metadata_schema,
+      uc_status: userCredentials.status,
+      uc_submitted: userCredentials.submitted,
+      uc_verified: userCredentials.verified,
+      uc_file_key: userCredentials.file_key,
+      expiration_date: userCredentials.expiration_date,
+      next_alert_at: userCredentials.next_alert_at,
+    })
+    .from(teamMembers)
+    .innerJoin(teamCredentials, eq(teamCredentials.team_id, teamMembers.team_id))
+    .innerJoin(
+      credentialTypes,
+      and(
+        eq(credentialTypes.id, teamCredentials.credential_id),
+        isNull(credentialTypes.deactivated_at),
+      ),
+    )
+    .leftJoin(
+      userCredentials,
+      and(
+        eq(userCredentials.user_id, userId),
+        eq(userCredentials.credential_id, credentialTypes.id),
+      ),
+    )
+    .where(eq(teamMembers.user_id, userId))
+    .orderBy(credentialTypes.id);
+
+  return rows.map(row => ({
+    credential_type: {
+      id: row.id,
+      name: row.name,
+      description: row.description,
+      metadata_schema: row.metadata_schema,
+    },
+    userCredential: row.uc_status !== null
+      ? {
+          status: row.uc_status,
+          submitted: row.uc_submitted,
+          verified: row.uc_verified,
+          file_key: row.uc_file_key,
+          expiration_date: row.expiration_date,
+          next_alert_at: row.next_alert_at,
         }
-      }
-    }
-  })
-
-  return result;
-}
-
-export const createUserCreds = async (credInput: NewUserCred) => {
-  const [result] = await db.insert(userCredentials).values({
-    ...credInput
-  }).returning();
-  
-  evtEmitter.emit(Events.CREDENTIAL_SUBMITTED);
-  return result;
-}
-
-export const updateVerifyCreds = async ({ mgrId, userId, credId }: ManagedCredParams) => {
-  const [result] = await db.update(userCredentials).set({
-    verified: sql`NOW()`,
-    verifier_id: mgrId,
-    status: 'active'
-  }).where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credId)))
-    .returning({
-      credId: userCredentials.credential_id,
-      userId: userCredentials.user_id
-    });
-
-  if (!result) throw new NotFoundError(`Credential ${credId} for user ${userId} not found.`);
-  evtEmitter.emit(Events.CREDENTIAL_VERIFIED, result);
-  return result;
-}
-
-export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredParams) => {
-  const [result] = await db.update(userCredentials).set({
-    revocation: sql`NOW()`,
-    revoker_id: mgrId,
-    status: 'revoked'
-  }).where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credId)))
-    .returning({
-      credId: userCredentials.credential_id,
-      userId: userCredentials.user_id
-    });
-
-  if (!result) throw new NotFoundError(`Credential ${credId} for user ${userId} not found.`);
-  evtEmitter.emit(Events.CREDENTIAL_REVOKED, result);
-  return result;
+      : null,
+    status: row.uc_status ?? 'missing',
+    expiration_date: row.expiration_date,
+    next_alert_at: row.next_alert_at,
+  }));
 }
 
 export const readTeamCreds = async (teamId: string) => {
@@ -82,7 +84,14 @@ export const readTeamCreds = async (teamId: string) => {
   return result;
 }
 
-export const createTeamCred = async (teamId: string, credId: string) => {
+export const createTeamCred = async (teamId: string, credId: string, orgId: string) => {
+  const [credType] = await db.select({ id: credentialTypes.id })
+    .from(credentialTypes)
+    .where(and(eq(credentialTypes.id, credId), eq(credentialTypes.org_id, orgId), isNull(credentialTypes.deactivated_at)))
+    .limit(1);
+
+  if (!credType) throw new NotFoundError('Credential type not found or not active in this org');
+
   await db.insert(teamCredentials).values({
     team_id: teamId,
     credential_id: credId
@@ -126,12 +135,3 @@ export const deleteTeamCred = async (teamId: string, credId: string) => {
   return result;
 }
 
-export const createCredential = async (orgId: string, cred: newCredInput) => {
-  const [result] = await db.insert(credentialTypes).values({
-    org_id: orgId,
-    name: cred.name,
-    description: cred.description
-  }).returning();
-
-  return result;
-}

@@ -13,6 +13,7 @@ import { evtEmitter } from './emitter.js';
 import { Events, EventPayloads } from './event.js';
 import { sendEmail } from '../services/email.serv.js';
 import * as tmpl from '../services/emailTemplates.js';
+import { notifyCredVerified, notifyCredRevoked, notifyCredExpiring, notifyInviter } from '../services/notification.serv.js';
 
 function asyncHandler<T>(fn: (data: T) => Promise<void>) {
   return (data: T) => {
@@ -105,11 +106,14 @@ evtEmitter.on(
       ? row.expiration_date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })
       : undefined;
 
-    await sendEmail({
-      to: row.email,
-      subject: `Credential verified: ${credName}`,
-      html: tmpl.credentialVerified(`${row.first} ${row.last}`, credName, expirationDate),
-    });
+    await Promise.all([
+      sendEmail({
+        to: row.email,
+        subject: `Credential verified: ${credName}`,
+        html: tmpl.credentialVerified(`${row.first} ${row.last}`, credName, expirationDate),
+      }),
+      notifyCredVerified({ userId, credId, credName }),
+    ]);
   }),
 );
 
@@ -163,22 +167,25 @@ evtEmitter.on(
 
     if (!row) return;
 
-    await sendEmail({
-      to: row.email,
-      subject: `Credential revoked: ${credName}`,
-      html: tmpl.credentialRevoked(
-        `${row.first} ${row.last}`,
-        credName,
-        row.review_notes ?? 'No reason provided',
-      ),
-    });
+    await Promise.all([
+      sendEmail({
+        to: row.email,
+        subject: `Credential revoked: ${credName}`,
+        html: tmpl.credentialRevoked(
+          `${row.first} ${row.last}`,
+          credName,
+          row.review_notes ?? 'No reason provided',
+        ),
+      }),
+      notifyCredRevoked({ userId, credId, credName }),
+    ]);
   }),
 );
 
 evtEmitter.on(
   Events.CREDENTIAL_EXPIRING,
   asyncHandler(async ({ userId, credId, daysUntilExpiry }: EventPayloads[typeof Events.CREDENTIAL_EXPIRING]) => {
-    const [[member], [cred]] = await Promise.all([
+    const [[member], [cred], managers] = await Promise.all([
       db.select({ email: users.email, first: users.first, last: users.last })
         .from(users)
         .where(eq(users.id, userId))
@@ -188,14 +195,64 @@ evtEmitter.on(
         .from(credentialTypes)
         .where(eq(credentialTypes.id, credId))
         .limit(1),
+
+      db.select({ email: users.email, first: users.first, last: users.last })
+        .from(teamMembers)
+        .innerJoin(teams, eq(teams.id, teamMembers.team_id))
+        .innerJoin(teamCredentials, and(
+          eq(teamCredentials.team_id, teams.id),
+          eq(teamCredentials.credential_id, credId),
+        ))
+        .innerJoin(users, eq(users.id, teams.manager_id))
+        .where(eq(teamMembers.user_id, userId)),
     ]);
 
     if (!member || !cred) return;
 
+    const credName = cred.name;
+    const memberName = `${member.first} ${member.last}`;
+
+    await Promise.all([
+      sendEmail({
+        to: member.email,
+        subject: `Credential expiring in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}: ${credName}`,
+        html: tmpl.credentialExpiring(memberName, credName, daysUntilExpiry),
+      }),
+      ...managers.map(mgr =>
+        sendEmail({
+          to: mgr.email,
+          subject: `Team member credential expiring in ${daysUntilExpiry} day(s): ${credName}`,
+          html: tmpl.credentialExpiringManager(`${mgr.first} ${mgr.last}`, memberName, credName, daysUntilExpiry),
+        })
+      ),
+      notifyCredExpiring({ userId, credId, daysUntilExpiry }),
+    ]);
+  }),
+);
+
+evtEmitter.on(
+  Events.INVITE_CREATED,
+  asyncHandler(async ({ teamId, inviteeEmail, inviterName, inviteToken }: EventPayloads[typeof Events.INVITE_CREATED]) => {
+    const [team] = await db.select({ name: teams.name })
+      .from(teams)
+      .where(eq(teams.id, teamId))
+      .limit(1);
+
+    if (!team) return;
+
+    const acceptUrl = `${process.env.FRONTEND_URL}/invite/${inviteToken}`;
+
     await sendEmail({
-      to: member.email,
-      subject: `Credential expiring in ${daysUntilExpiry} day${daysUntilExpiry !== 1 ? 's' : ''}: ${cred.name}`,
-      html: tmpl.credentialExpiring(`${member.first} ${member.last}`, cred.name, daysUntilExpiry),
+      to: inviteeEmail,
+      subject: "You've been invited to join a team on CredPlat",
+      html: tmpl.inviteCreated(inviteeEmail, inviterName, team.name ?? '', acceptUrl),
     });
+  }),
+);
+
+evtEmitter.on(
+  Events.INVITE_ACCEPTED,
+  asyncHandler(async ({ teamId, userId }: EventPayloads[typeof Events.INVITE_ACCEPTED]) => {
+    await notifyInviter({ teamId, userId });
   }),
 );

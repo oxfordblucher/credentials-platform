@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
-import { fetchStaff, addMember, deleteMember } from '../services/team.serv.js';
+import { fetchTeamMembers, addMember, deleteMember } from '../services/team.serv.js';
 
-export const getStaff = async (req: Request, res: Response, next: NextFunction) => {
+export const getTeamMembers = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.user!;
-    const staff = await fetchStaff(id);
+    const { id, orgId, orgRole } = req.user!;
+    const members = await fetchTeamMembers(id, orgId, orgRole);
 
     res.status(200).json({
       message: "Success",
-      staff: staff
+      members: members
     });
   }
   catch (error) {

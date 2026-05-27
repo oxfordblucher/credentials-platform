@@ -66,3 +66,8 @@ export const requireAdmin = async (req: Request, res: Response, next: NextFuncti
     next(new PermissionError);
   }
 }
+
+export const requireOwner = (req: Request, res: Response, next: NextFunction) => {
+  if (req.user?.orgRole !== 'owner') return next(new PermissionError);
+  return next();
+}

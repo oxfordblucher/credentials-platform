@@ -41,24 +41,11 @@ export type LoginInput = z.infer<typeof loginSchema>
 
 export const inviteSchema = z.object({
   emails: z.array(z.email()).min(1),
-  org_id: z.string(),
   team_id: z.string(),
   role: z.enum(["manager", "member"])
 });
 
 export type InviteInput = z.infer<typeof inviteSchema>
-
-export const newCredSchema = z.object({
-  name: z.string(),
-  description: z.string()
-});
-
-export type newCredInput = z.infer<typeof newCredSchema>
-
-export const userCredSchema = z.object({
-  credential_id: z.string(),
-  file: z.string()
-});
 
 export const newTeamSchema = z.object({
   name: z.string(),

@@ -1,25 +1,49 @@
-import { invites, teams } from "../db/schema/index.js";
+import { invites, teams, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
 import { InviteInput } from "../utils/zod.js";
 import { eq, sql } from "drizzle-orm";
 import { NotFoundError } from "../errors/AppError.js";
 import { genInvite } from "../utils/token.js";
 import { OrgRole } from "../types/types.js";
+import { evtEmitter } from "../events/emitter.js";
+import { Events } from "../events/event.js";
 
-export const createInvites = async (inviteData: InviteInput, senderId: string) => {
+export const createInvites = async (inviteData: InviteInput, senderId: string, orgId: string) => {
   const { emails, ...newInvite } = inviteData;
-  const result = await db.insert(invites).values(
-    emails.map(email => ({
-      ...newInvite,
-      email: email,
-      inviter_id: senderId,
-      token: genInvite()
-    }))
-  ).returning({
-    id: invites.id,
-    email: invites.email,
-    expiration: invites.expiration
-  });
+
+  const [[inviter], result] = await Promise.all([
+    db.select({ first: users.first, last: users.last })
+      .from(users)
+      .where(eq(users.id, senderId))
+      .limit(1),
+
+    db.insert(invites).values(
+      emails.map(email => ({
+        ...newInvite,
+        org_id: orgId,
+        email: email,
+        inviter_id: senderId,
+        token: genInvite()
+      }))
+    ).returning({
+      id: invites.id,
+      email: invites.email,
+      token: invites.token,
+      expiration: invites.expiration
+    }),
+  ]);
+
+  if (inviter) {
+    const inviterName = `${inviter.first} ${inviter.last}`;
+    for (const invite of result) {
+      evtEmitter.emit(Events.INVITE_CREATED, {
+        teamId: newInvite.team_id,
+        inviteeEmail: invite.email,
+        inviterName,
+        inviteToken: invite.token,
+      });
+    }
+  }
 
   return result;
 }

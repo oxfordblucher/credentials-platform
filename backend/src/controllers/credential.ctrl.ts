@@ -1,11 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import { readCredentials, createUserCreds, updateVerifyCreds, deleteCredentials, readTeamCreds, createTeamCred, deleteTeamCred, createCredential } from '../services/credential.serv.js';
-import { userCredSchema, newCredSchema } from '../utils/zod.js';
+import { readCredentials, readTeamCreds, createTeamCred, deleteTeamCred } from '../services/credential.serv.js';
 
 export const getCredentials = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.userId as string | undefined ?? req.user!.id;
-    const credentials = await readCredentials(id);
+    const paramUserId = req.params.userId as string | undefined;
+    const { id: selfId, orgId } = req.user!;
+    const id = paramUserId ?? selfId;
+    const credentials = await readCredentials(id, paramUserId !== undefined ? orgId : undefined);
 
     res.status(200).json({
       message: "Success",
@@ -17,26 +18,7 @@ export const getCredentials = async (req: Request, res: Response, next: NextFunc
   }
 }
 
-export const submitCredential = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.user!;
-    const credInput = userCredSchema.parse(req.body);
-    const newCred = await createUserCreds({
-      ...credInput,
-      user_id: id
-    });
-
-    res.status(200).json({
-      message: "Success",
-      newCred: newCred
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}
-
-export const getTeamCreds = async (req: Request, res: Response, next: NextFunction) => {
+export const getTeamRequirementsCtrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { teamId } = req.params as { teamId: string };
     const credentials = await readTeamCreds(teamId);
@@ -51,13 +33,14 @@ export const getTeamCreds = async (req: Request, res: Response, next: NextFuncti
   }
 }
 
-export const addTeamCred = async (req: Request, res: Response, next: NextFunction) => {
+export const addTeamRequirementCtrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { teamId } = req.params as { teamId: string };
-    const { credId } = req.body;
-    const credential = await createTeamCred(teamId, credId);
+    const { orgId } = req.user!;
+    const { credential_type_id } = req.body;
+    const credential = await createTeamCred(teamId, credential_type_id, orgId);
 
-    res.status(200).json({
+    res.status(201).json({
       message: "Success",
       credential: credential
     });
@@ -67,10 +50,10 @@ export const addTeamCred = async (req: Request, res: Response, next: NextFunctio
   }
 }
 
-export const removeTeamCred = async (req: Request, res: Response, next: NextFunction) => {
+export const removeTeamRequirementCtrl = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId, credId } = req.params as { teamId: string; credId: string; };
-    const deleted = await deleteTeamCred(teamId, credId);
+    const { teamId, credentialTypeId } = req.params as { teamId: string; credentialTypeId: string };
+    const deleted = await deleteTeamCred(teamId, credentialTypeId);
 
     res.status(200).json({
       message: "Success",
@@ -82,18 +65,3 @@ export const removeTeamCred = async (req: Request, res: Response, next: NextFunc
   }
 }
 
-export const addCredential = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { orgId } = req.user!;
-    const verified = newCredSchema.parse(req.body);
-    const newCred = await createCredential(orgId, verified);
-    
-    res.status(200).json({
-      message: "Success",
-      credential: newCred
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}

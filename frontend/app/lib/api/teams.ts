@@ -54,3 +54,27 @@ export async function acceptInvite(
     }
   );
 }
+
+export async function listTeamRequirements(teamId: string): Promise<{ credentials: unknown[] }> {
+  return apiFetch<{ credentials: unknown[] }>(`/api/teams/${teamId}/requirements`);
+}
+
+export async function addTeamRequirement(
+  teamId: string,
+  credentialTypeId: string
+): Promise<{ credential: unknown }> {
+  return apiFetch<{ credential: unknown }>(`/api/teams/${teamId}/requirements`, {
+    method: 'POST',
+    body: JSON.stringify({ credential_type_id: credentialTypeId }),
+  });
+}
+
+export async function removeTeamRequirement(
+  teamId: string,
+  credentialTypeId: string
+): Promise<{ deleted: unknown }> {
+  return apiFetch<{ deleted: unknown }>(
+    `/api/teams/${teamId}/requirements/${credentialTypeId}`,
+    { method: 'DELETE' }
+  );
+}
