@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { readCredentials, createUserCreds, updateVerifyCreds, deleteCredentials, readTeamCreds, createTeamCred, deleteTeamCred, createCredential } from '../services/credential.serv.js';
-import { userCredSchema, newCredSchema } from '../utils/zod.js';
+import { readCredentials, readTeamCreds, createTeamCred, deleteTeamCred } from '../services/credential.serv.js';
 
 export const getCredentials = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -12,25 +11,6 @@ export const getCredentials = async (req: Request, res: Response, next: NextFunc
     res.status(200).json({
       message: "Success",
       credentials: credentials
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}
-
-export const submitCredential = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { id } = req.user!;
-    const credInput = userCredSchema.parse(req.body);
-    const newCred = await createUserCreds({
-      ...credInput,
-      user_id: id
-    });
-
-    res.status(200).json({
-      message: "Success",
-      newCred: newCred
     });
   }
   catch (error) {
@@ -59,7 +39,7 @@ export const addTeamCred = async (req: Request, res: Response, next: NextFunctio
     const { credId } = req.body;
     const credential = await createTeamCred(teamId, credId);
 
-    res.status(200).json({
+    res.status(201).json({
       message: "Success",
       credential: credential
     });
@@ -84,18 +64,3 @@ export const removeTeamCred = async (req: Request, res: Response, next: NextFunc
   }
 }
 
-export const addCredential = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { orgId } = req.user!;
-    const verified = newCredSchema.parse(req.body);
-    const newCred = await createCredential(orgId, verified);
-    
-    res.status(200).json({
-      message: "Success",
-      credential: newCred
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}

@@ -1,10 +1,8 @@
-import { credentialTypes, NewUserCred, teamCredentials, teamMembers, userCredentials, users } from "../db/schema/index.js";
+import { credentialTypes, teamCredentials, teamMembers, userCredentials, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
-import { sql, and, eq, isNull } from "drizzle-orm";
-import { ManagedCredParams } from "../types/types.js";
+import { and, eq, isNull } from "drizzle-orm";
 import { Events } from "../events/event.js";
 import { evtEmitter } from "../events/emitter.js";
-import { newCredInput } from "../utils/zod.js";
 import { NotFoundError, PermissionError } from "../errors/AppError.js";
 
 export const readCredentials = async (userId: string, actorOrgId?: string) => {
@@ -72,47 +70,6 @@ export const readCredentials = async (userId: string, actorOrgId?: string) => {
   }));
 }
 
-export const createUserCreds = async (credInput: NewUserCred) => {
-  const [result] = await db.insert(userCredentials).values({
-    ...credInput
-  }).returning();
-  
-  evtEmitter.emit(Events.CREDENTIAL_SUBMITTED);
-  return result;
-}
-
-export const updateVerifyCreds = async ({ mgrId, userId, credId }: ManagedCredParams) => {
-  const [result] = await db.update(userCredentials).set({
-    verified: sql`NOW()`,
-    verifier_id: mgrId,
-    status: 'active'
-  }).where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credId)))
-    .returning({
-      credId: userCredentials.credential_id,
-      userId: userCredentials.user_id
-    });
-
-  if (!result) throw new NotFoundError(`Credential ${credId} for user ${userId} not found.`);
-  evtEmitter.emit(Events.CREDENTIAL_VERIFIED, result);
-  return result;
-}
-
-export const deleteCredentials = async ({ mgrId, userId, credId }: ManagedCredParams) => {
-  const [result] = await db.update(userCredentials).set({
-    revocation: sql`NOW()`,
-    revoker_id: mgrId,
-    status: 'revoked'
-  }).where(and(eq(userCredentials.user_id, userId), eq(userCredentials.credential_id, credId)))
-    .returning({
-      credId: userCredentials.credential_id,
-      userId: userCredentials.user_id
-    });
-
-  if (!result) throw new NotFoundError(`Credential ${credId} for user ${userId} not found.`);
-  evtEmitter.emit(Events.CREDENTIAL_REVOKED, result);
-  return result;
-}
-
 export const readTeamCreds = async (teamId: string) => {
   const result = await db.query.credentialTypes.findMany({
     with: {
@@ -171,12 +128,3 @@ export const deleteTeamCred = async (teamId: string, credId: string) => {
   return result;
 }
 
-export const createCredential = async (orgId: string, cred: newCredInput) => {
-  const [result] = await db.insert(credentialTypes).values({
-    org_id: orgId,
-    name: cred.name,
-    description: cred.description
-  }).returning();
-
-  return result;
-}
