@@ -7,8 +7,8 @@ const password = process.env.DB_PASSWORD_FILE
   ? fs.readFileSync(process.env.DB_PASSWORD_FILE, 'utf-8').trim()
   : process.env.DB_PASSWORD ?? '';
 
-const dbCredentials = process.env.DATABASE_URL
-  ? ({ url: process.env.DATABASE_URL } as const)
+const dbCredentials = process.env.DATABASE_URL_DIRECT
+  ? ({ url: process.env.DATABASE_URL_DIRECT } as const)
   : ({
       host: process.env.DB_HOST ?? 'localhost',
       port: parseInt(process.env.DB_PORT ?? '5432'),

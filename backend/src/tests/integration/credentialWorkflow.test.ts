@@ -561,11 +561,11 @@ describe('Credential workflow — full lifecycle', () => {
 
   describe('Expiration — POST /api/internal/expiration-alerts', () => {
     beforeAll(() => {
-      process.env.INTERNAL_SECRET = 'test-internal-secret';
+      process.env.INTERNAL_CRON_SECRET = 'test-internal-secret';
     });
 
     afterAll(() => {
-      delete process.env.INTERNAL_SECRET;
+      delete process.env.INTERNAL_CRON_SECRET;
     });
 
     afterEach(async () => {

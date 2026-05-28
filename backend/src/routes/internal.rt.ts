@@ -4,7 +4,7 @@ import { processExpirationAlerts } from '../services/expirationAlert.serv.js';
 const router = Router();
 
 function requireInternalSecret(req: Request, res: Response, next: NextFunction) {
-  const secret = process.env.INTERNAL_SECRET;
+  const secret = process.env.INTERNAL_CRON_SECRET;
   if (!secret || req.headers['x-internal-secret'] !== secret) {
     res.status(401).json({ message: 'Unauthorized' });
     return;
