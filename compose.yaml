@@ -13,17 +13,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
-    secrets:
-      - db-password
-      - jwt-secret
     environment:
       PORT: 3000
-      DB_NAME: credplat
-      DB_USER: postgres
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_PASSWORD_FILE: /run/secrets/db-password
-      JWT_SECRET_FILE: /run/secrets/jwt-secret
+      DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@db:5432/credplat
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
     ports:
       - "3001:3000"
     networks:
@@ -60,13 +54,12 @@ services:
     image: postgres:alpine
     restart: always
     user: postgres
-    secrets:
-      - db-password
     volumes:
       - db-data:/var/lib/postgresql
     environment:
       - POSTGRES_DB=credplat
-      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
       - PGDATA=/var/lib/postgresql/data/pgdata
     networks:
       - app-network
@@ -79,11 +72,6 @@ services:
       retries: 5
 volumes:
   db-data:
-secrets:
-  db-password:
-    file: db/password.txt
-  jwt-secret:
-    file: db/jwt-secret.json
 networks:
   app-network:
     driver: bridge
