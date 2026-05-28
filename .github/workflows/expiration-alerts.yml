@@ -1,0 +1,16 @@
+name: Expiration Alerts
+
+on:
+  schedule:
+    - cron: '0 8 * * *'   # daily at 08:00 UTC
+  workflow_dispatch:        # manual trigger for testing
+
+jobs:
+  run-alerts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger expiration alerts
+        run: |
+          curl --fail -X POST \
+            -H "X-Internal-Secret: ${{ secrets.INTERNAL_CRON_SECRET }}" \
+            ${{ secrets.API_BASE_URL }}/api/internal/expiration-alerts
