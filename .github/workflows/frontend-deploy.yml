@@ -31,3 +31,7 @@ jobs:
         run: |
           npm run lint
           npm test
+
+  # Deploy: handled by Vercel's native GitHub integration (no GHA step required).
+  # If switching to a Vercel deploy hook, add a deploy job here that calls
+  # curl -X POST ${{ secrets.VERCEL_DEPLOY_HOOK }} on push to main.
