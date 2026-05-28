@@ -52,6 +52,11 @@ function buildPropSchema(key: string, prop: JsonSchemaProp): z.ZodTypeAny {
 }
 
 export function buildMetadataValidator(schema: Record<string, unknown>): z.ZodTypeAny {
+  // Empty schema means no metadata constraints — accept any object.
+  if (Object.keys(schema).length === 0) {
+    return z.record(z.string(), z.unknown());
+  }
+
   if (schema.type !== 'object' || typeof schema.properties !== 'object' || schema.properties === null) {
     throw new AppError(400, 'Unsupported schema field: root');
   }

@@ -17,6 +17,7 @@ services:
       - db-password
       - jwt-secret
     environment:
+      PORT: 3000
       DB_NAME: credplat
       DB_USER: postgres
       DB_HOST: db

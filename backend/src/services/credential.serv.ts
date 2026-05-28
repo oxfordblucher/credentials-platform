@@ -116,7 +116,7 @@ export const createTeamCred = async (teamId: string, credId: string, orgId: stri
     }
   });
 
-  evtEmitter.emit(Events.CREDENTIAL_REQUIRED, { 
+  evtEmitter.emit(Events.CREDENTIAL_REQUIRED, {
     teamId: result!.teams[0].team_id,
     teamName: result!.teams[0].team!.name,
     credId: result!.id,

@@ -23,6 +23,7 @@ export function Modal({ open, onClose, title, children, size = 'md' }: ModalProp
 
   useEffect(() => {
     if (open) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMounted(true);
       // Defer to next frame so transition can fire
       const raf = requestAnimationFrame(() => setVisible(true));

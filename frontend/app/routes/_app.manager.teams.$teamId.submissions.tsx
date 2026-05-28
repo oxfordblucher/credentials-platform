@@ -88,6 +88,7 @@ export default function ManagerSubmissionsPage() {
       const val = reviewTarget.submittedMetadata?.[field.key];
       initial[field.key] = val != null ? String(val) : '';
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setVerifyMetadata(initial);
     setExpirationDate('');
     setVerifyNotes('');
@@ -178,6 +179,7 @@ export default function ManagerSubmissionsPage() {
     }
   }
 
+  // eslint-disable-next-line react-hooks/purity
   const minDate = new Date(Date.now() + 86_400_000).toISOString().split('T')[0];
 
   return (

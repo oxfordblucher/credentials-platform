@@ -26,7 +26,7 @@ export const authenticate = (req: Request, res: Response, next: NextFunction) =>
 export const authorize = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id, orgId, orgRole } = req.user!;
-    const teamId = req.params.teamId as string | undefined ?? req.body.teamId as string | undefined;
+    const teamId = req.params.teamId as string | undefined ?? req.body?.teamId as string | undefined;
 
     if (!teamId) {
       // any org-level role ('admin' | 'owner') grants access when no team context

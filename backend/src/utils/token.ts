@@ -22,7 +22,7 @@ export const genUUID = () => {
 
 export const signRefreshToken = (userId: string, sessionId: string) => {
   return jwt.sign(
-    { user: userId, session: sessionId },
+    { user: userId, sessionId: sessionId, jti: crypto.randomUUID() },
     refreshSecret,
     { expiresIn: '7d' }
   );
@@ -37,11 +37,11 @@ export const signAccessToken = (user: Pick<AccessPayload, 'id' | 'orgId' | 'sess
 }
 
 export const verifyAccess = (token: string): AccessPayload => {
-  return jwt.verify(token, accessSecret);
+  return jwt.verify(token, accessSecret) as AccessPayload;
 }
 
 export const verifyRefresh = (token: string): RefreshPayload => {
-  return jwt.verify(token, refreshSecret);
+  return jwt.verify(token, refreshSecret) as RefreshPayload;
 }
 
 export const setTokenCookie = (res: Response, refresh: string) => {

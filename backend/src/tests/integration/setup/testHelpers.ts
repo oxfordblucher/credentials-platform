@@ -1,7 +1,22 @@
 import { randomUUID } from 'crypto';
 import bcrypt from 'bcrypt';
+import { eq, inArray } from 'drizzle-orm';
 import { db } from '../../../db/index.js';
-import { orgs, users, teamMembers } from '../../../db/schema/index.js';
+import {
+  orgs,
+  users,
+  teamMembers,
+  teams,
+  credentialTypes,
+  teamCredentials,
+  userCredentials,
+  rejectionReasons,
+  credentialAuditLog,
+  sessions,
+  uploadTokens,
+  notifications,
+  invites,
+} from '../../../db/schema/index.js';
 import { signAccessToken } from '../../../utils/token.js';
 import { app } from '../../../app.js';
 import type { Transaction } from '../../../types/types.js';
@@ -46,18 +61,19 @@ export async function withTestTransaction<T>(
  * Creates a minimal org + owner user, returns { orgId, ownerId, ownerToken }.
  * Inserted directly into the DB — use inside withTestTransaction for isolation.
  */
-export async function createTestOrg(): Promise<{
+export async function createTestOrg(tx?: Transaction): Promise<{
   orgId: string;
   ownerId: string;
   ownerToken: string;
 }> {
+  const qb = tx ?? db;
   const orgId = randomUUID();
   const ownerId = randomUUID();
   const sessionId = randomUUID();
 
   // Insert org first (user's org_id FK must exist before inserting user).
   // orgs.owner_id has no FK constraint, so we can set it to the pre-generated UUID.
-  await db.insert(orgs).values({
+  await qb.insert(orgs).values({
     id: orgId,
     owner_id: ownerId,
     name: 'Test Org',
@@ -65,7 +81,7 @@ export async function createTestOrg(): Promise<{
   });
 
   const passwordHash = await bcrypt.hash('testpassword', 1); // cost=1 for speed in tests
-  await db.insert(users).values({
+  await qb.insert(users).values({
     id: ownerId,
     first: 'Test',
     last: 'Owner',
@@ -89,11 +105,13 @@ export async function createTestUser(
   orgId: string,
   role: 'manager' | 'member' = 'member',
   teamId?: string,
+  tx?: Transaction,
 ): Promise<{ userId: string; token: string }> {
+  const qb = tx ?? db;
   const userId = randomUUID();
   const sessionId = randomUUID();
 
-  await db.insert(users).values({
+  await qb.insert(users).values({
     id: userId,
     first: 'Test',
     last: 'User',
@@ -105,7 +123,7 @@ export async function createTestUser(
   });
 
   if (teamId) {
-    await db.insert(teamMembers).values({
+    await qb.insert(teamMembers).values({
       user_id: userId,
       team_id: teamId,
       role,
@@ -115,4 +133,149 @@ export async function createTestUser(
   const token = signAccessToken({ id: userId, orgId, sessionId, orgRole: null });
 
   return { userId, token };
+}
+
+/**
+ * Creates a user with org_role = 'admin'. Returns { userId, token }.
+ */
+export async function createTestAdmin(orgId: string, tx?: Transaction): Promise<{ userId: string; token: string }> {
+  const qb = tx ?? db;
+  const userId = randomUUID();
+  const sessionId = randomUUID();
+
+  await qb.insert(users).values({
+    id: userId,
+    first: 'Test',
+    last: 'User',
+    email: `user-${userId.slice(0, 8)}@test.example`,
+    password: await bcrypt.hash('testpassword', 1),
+    org_id: orgId,
+    org_role: 'admin',
+    dob: new Date('1990-01-01'),
+  });
+
+  const token = signAccessToken({ id: userId, orgId, sessionId, orgRole: 'admin' });
+
+  return { userId, token };
+}
+
+export async function createTestTeam(orgId: string, managerId: string, tx?: Transaction): Promise<{ teamId: string }> {
+  const qb = tx ?? db;
+  const [row] = await qb
+    .insert(teams)
+    .values({ id: randomUUID(), org_id: orgId, manager_id: managerId, name: 'Test Team' })
+    .returning();
+  return { teamId: row.id };
+}
+
+export async function createTestCredentialType(
+  orgId: string,
+  overrides?: { name?: string; metadata_schema?: Record<string, unknown> },
+  tx?: Transaction,
+): Promise<{ credentialTypeId: string }> {
+  const qb = tx ?? db;
+  const [row] = await qb
+    .insert(credentialTypes)
+    .values({
+      id: randomUUID(),
+      org_id: orgId,
+      name: overrides?.name ?? 'Test Credential-' + randomUUID().slice(0, 8),
+      metadata_schema: overrides?.metadata_schema ?? {},
+      schema_version: 1,
+      deactivated_at: null,
+    })
+    .returning();
+  return { credentialTypeId: row.id };
+}
+
+export async function assignCredentialToTeam(teamId: string, credentialTypeId: string, tx?: Transaction): Promise<void> {
+  const qb = tx ?? db;
+  await qb.insert(teamCredentials).values({ team_id: teamId, credential_id: credentialTypeId });
+}
+
+/**
+ * Inserts the five standard rejection reasons. Safe to call multiple times.
+ * Returns the ID of the DOCUMENT_EXPIRED reason for use in assertions.
+ */
+export async function seedRejectionReasons(tx?: Transaction): Promise<{ firstReasonId: string }> {
+  const qb = tx ?? db;
+  const SEED_REASONS = [
+    { code: 'DOCUMENT_EXPIRED',   label: 'Document is expired' },
+    { code: 'WRONG_TYPE',         label: 'Wrong credential type submitted' },
+    { code: 'ILLEGIBLE',          label: 'Document is illegible or corrupted' },
+    { code: 'METADATA_INCORRECT', label: 'Submitted information does not match document' },
+    { code: 'OTHER',              label: 'Other — see review notes' },
+  ];
+
+  const existing = await qb.select().from(rejectionReasons).where(eq(rejectionReasons.code, 'DOCUMENT_EXPIRED')).limit(1);
+  if (existing.length > 0) return { firstReasonId: existing[0].id };
+  await qb.insert(rejectionReasons).values(SEED_REASONS.map(r => ({ id: randomUUID(), ...r })));
+  const [row] = await qb.select().from(rejectionReasons).where(eq(rejectionReasons.code, 'DOCUMENT_EXPIRED')).limit(1);
+  return { firstReasonId: row.id };
+}
+
+/**
+ * Directly inserts a user_credentials row with status='pending' and a matching
+ * audit_log entry (from_status=null, to_status='pending').
+ * Returns { userId, credentialTypeId } for use in downstream DB assertions.
+ */
+export async function createPendingUserCredential(
+  userId: string,
+  credentialTypeId: string,
+  opts?: { fileKey?: string; submittedMetadata?: Record<string, unknown>; actorId?: string },
+  tx?: Transaction,
+): Promise<{ userId: string; credentialTypeId: string }> {
+  const run = async (qb: Transaction) => {
+    await qb.insert(userCredentials).values({
+      user_id: userId,
+      credential_id: credentialTypeId,
+      status: 'pending',
+      file_key: opts?.fileKey,
+      submitted_metadata: opts?.submittedMetadata,
+    });
+    await qb.insert(credentialAuditLog).values({
+      id: randomUUID(),
+      user_id: userId,
+      credential_id: credentialTypeId,
+      from_status: null,
+      to_status: 'pending',
+      actor_id: opts?.actorId ?? userId,
+    });
+  };
+
+  if (tx) {
+    await run(tx);
+  } else {
+    await db.transaction(run);
+  }
+  return { userId, credentialTypeId };
+}
+
+/**
+ * Deletes all data associated with an org in FK-safe order.
+ * Call in afterAll() of all HTTP integration test files.
+ */
+export async function cleanupTestOrg(orgId: string): Promise<void> {
+  const userRows = await db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId));
+  const userIds = userRows.map((r) => r.id);
+
+  const teamRows = await db.select({ id: teams.id }).from(teams).where(eq(teams.org_id, orgId));
+  const teamIds = teamRows.map((r) => r.id);
+
+  if (userIds.length > 0) {
+    await db.delete(credentialAuditLog).where(inArray(credentialAuditLog.user_id, userIds));
+    await db.delete(userCredentials).where(inArray(userCredentials.user_id, userIds));
+    await db.delete(uploadTokens).where(inArray(uploadTokens.user_id, userIds));
+    await db.delete(notifications).where(inArray(notifications.user_id, userIds));
+    await db.delete(sessions).where(inArray(sessions.user_id, userIds));
+  }
+  if (teamIds.length > 0) {
+    await db.delete(teamCredentials).where(inArray(teamCredentials.team_id, teamIds));
+    await db.delete(teamMembers).where(inArray(teamMembers.team_id, teamIds));
+  }
+  await db.delete(credentialTypes).where(eq(credentialTypes.org_id, orgId));
+  await db.delete(invites).where(eq(invites.org_id, orgId));
+  await db.delete(teams).where(eq(teams.org_id, orgId));
+  await db.delete(users).where(eq(users.org_id, orgId));
+  await db.delete(orgs).where(eq(orgs.id, orgId));
 }

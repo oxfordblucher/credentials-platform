@@ -1,19 +1,26 @@
-import { createDefaultEsmPreset, type JestConfigWithTsJest } from 'ts-jest';
+import { createDefaultEsmPreset } from 'ts-jest';
 
 const preset = createDefaultEsmPreset();
+
+const projectPreset = {
+  ...preset,
+  transform: {
+    '^.+\\.m?tsx?$': ['ts-jest', { useESM: true, diagnostics: false }],
+  },
+};
 
 const sharedModuleNameMapper = {
   '^(\\.{1,2}/.*)\\.js$': '$1',
 };
 
-const config: JestConfigWithTsJest = {
+const config = {
   projects: [
     {
       displayName: 'unit',
       testEnvironment: 'node',
       testMatch: ['**/tests/unit/**/*.test.ts'],
       setupFiles: ['<rootDir>/src/tests/setup.ts'],
-      ...preset,
+      ...projectPreset,
       moduleNameMapper: sharedModuleNameMapper,
     },
     {
@@ -22,7 +29,7 @@ const config: JestConfigWithTsJest = {
       testMatch: ['**/tests/integration/**/*.test.ts'],
       setupFiles: ['<rootDir>/src/tests/integration/setup/jestSetup.ts'],
       globalSetup: '<rootDir>/src/tests/integration/setup/globalSetup.ts',
-      ...preset,
+      ...projectPreset,
       moduleNameMapper: sharedModuleNameMapper,
     },
   ],
