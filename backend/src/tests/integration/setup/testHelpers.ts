@@ -256,42 +256,26 @@ export async function createPendingUserCredential(
  * Call in afterAll() of all HTTP integration test files.
  */
 export async function cleanupTestOrg(orgId: string): Promise<void> {
-  // 1. credential_audit_log
-  await db.delete(credentialAuditLog).where(
-    inArray(credentialAuditLog.user_id, db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId)))
-  );
-  // 2. user_credentials
-  await db.delete(userCredentials).where(
-    inArray(userCredentials.user_id, db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId)))
-  );
-  // 3. team_credentials
-  await db.delete(teamCredentials).where(
-    inArray(teamCredentials.team_id, db.select({ id: teams.id }).from(teams).where(eq(teams.org_id, orgId)))
-  );
-  // 4. credential_types
+  const userRows = await db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId));
+  const userIds = userRows.map((r) => r.id);
+
+  const teamRows = await db.select({ id: teams.id }).from(teams).where(eq(teams.org_id, orgId));
+  const teamIds = teamRows.map((r) => r.id);
+
+  if (userIds.length > 0) {
+    await db.delete(credentialAuditLog).where(inArray(credentialAuditLog.user_id, userIds));
+    await db.delete(userCredentials).where(inArray(userCredentials.user_id, userIds));
+    await db.delete(uploadTokens).where(inArray(uploadTokens.user_id, userIds));
+    await db.delete(notifications).where(inArray(notifications.user_id, userIds));
+    await db.delete(sessions).where(inArray(sessions.user_id, userIds));
+  }
+  if (teamIds.length > 0) {
+    await db.delete(teamCredentials).where(inArray(teamCredentials.team_id, teamIds));
+    await db.delete(teamMembers).where(inArray(teamMembers.team_id, teamIds));
+  }
   await db.delete(credentialTypes).where(eq(credentialTypes.org_id, orgId));
-  // 5. team_members
-  await db.delete(teamMembers).where(
-    inArray(teamMembers.team_id, db.select({ id: teams.id }).from(teams).where(eq(teams.org_id, orgId)))
-  );
-  // 6. upload_tokens
-  await db.delete(uploadTokens).where(
-    inArray(uploadTokens.user_id, db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId)))
-  );
-  // 7. notifications
-  await db.delete(notifications).where(
-    inArray(notifications.user_id, db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId)))
-  );
-  // 8. sessions
-  await db.delete(sessions).where(
-    inArray(sessions.user_id, db.select({ id: users.id }).from(users).where(eq(users.org_id, orgId)))
-  );
-  // 9. invites
   await db.delete(invites).where(eq(invites.org_id, orgId));
-  // 10. teams
   await db.delete(teams).where(eq(teams.org_id, orgId));
-  // 11. users
   await db.delete(users).where(eq(users.org_id, orgId));
-  // 12. orgs
   await db.delete(orgs).where(eq(orgs.id, orgId));
 }
