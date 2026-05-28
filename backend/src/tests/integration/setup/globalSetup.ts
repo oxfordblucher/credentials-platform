@@ -1,10 +1,12 @@
 import { execSync } from 'child_process';
+import { config as dotenvConfig } from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-// Resolve to the backend root (4 levels up from src/tests/integration/setup/).
-const backendRoot = path.resolve(__dirname, '../../../..');
+// process.cwd() is the backend root when Jest is invoked from that directory.
+const backendRoot = process.cwd();
+
+// Load .env.test so DATABASE_URL_TEST is available for migrations.
+dotenvConfig({ path: path.join(backendRoot, '.env.test') });
 
 export default async function globalSetup(): Promise<void> {
   const url = process.env.DATABASE_URL_TEST ?? process.env.DATABASE_URL_DIRECT;
@@ -18,11 +20,13 @@ export default async function globalSetup(): Promise<void> {
     return;
   }
 
-  console.log('[globalSetup] Running drizzle-kit migrate against test database…');
-  execSync('npx drizzle-kit migrate', {
-    env: { ...process.env, DATABASE_URL: url },
-    stdio: 'inherit',
-    cwd: backendRoot,
-  });
-  console.log('[globalSetup] Migrations complete.');
+  const env = { ...process.env, DATABASE_URL: url };
+
+  console.log('[globalSetup] Pushing schema to test database…');
+  execSync('npx drizzle-kit push', { env, stdio: 'inherit', cwd: backendRoot });
+
+  console.log('[globalSetup] Applying data migrations…');
+  execSync('npx drizzle-kit migrate', { env, stdio: 'inherit', cwd: backendRoot });
+
+  console.log('[globalSetup] Test database ready.');
 }

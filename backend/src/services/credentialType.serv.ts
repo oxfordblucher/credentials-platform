@@ -1,7 +1,7 @@
 import { eq, and, isNull, sql } from 'drizzle-orm';
 import { db } from '../db/index.js';
-import { credentialTypes } from '../db/schema/index.js';
-import { NotFoundError } from '../errors/AppError.js';
+import { credentialTypes, teamCredentials } from '../db/schema/index.js';
+import { ConflictError, NotFoundError } from '../errors/AppError.js';
 import { CreateCredTypeInput, UpdateCredTypeInput } from '../utils/zod.js';
 import { buildMetadataValidator } from '../utils/metadataValidator.js';
 
@@ -24,6 +24,13 @@ export const createCredentialType = async (orgId: string, input: CreateCredTypeI
   if (Object.keys(input.metadata_schema).length > 0) {
     buildMetadataValidator(input.metadata_schema); // throws AppError(400) if invalid
   }
+
+  const [existing] = await db.select({ id: credentialTypes.id })
+    .from(credentialTypes)
+    .where(and(eq(credentialTypes.org_id, orgId), eq(credentialTypes.name, input.name)))
+    .limit(1);
+  if (existing) throw new ConflictError('A credential type with this name already exists in your organisation');
+
   const [result] = await db.insert(credentialTypes).values({
     org_id: orgId,
     name: input.name,
@@ -77,6 +84,12 @@ export const updateCredentialType = async (
 };
 
 export const deactivateCredentialType = async (typeId: string, orgId: string) => {
+  const [activeRef] = await db.select({ team_id: teamCredentials.team_id })
+    .from(teamCredentials)
+    .where(eq(teamCredentials.credential_id, typeId))
+    .limit(1);
+  if (activeRef) throw new ConflictError('Cannot deactivate a credential type that is still assigned to a team');
+
   const [result] = await db.update(credentialTypes)
     .set({ deactivated_at: sql`NOW()` })
     .where(and(
