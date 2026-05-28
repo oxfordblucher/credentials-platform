@@ -61,18 +61,19 @@ export async function withTestTransaction<T>(
  * Creates a minimal org + owner user, returns { orgId, ownerId, ownerToken }.
  * Inserted directly into the DB — use inside withTestTransaction for isolation.
  */
-export async function createTestOrg(): Promise<{
+export async function createTestOrg(tx?: Transaction): Promise<{
   orgId: string;
   ownerId: string;
   ownerToken: string;
 }> {
+  const qb = tx ?? db;
   const orgId = randomUUID();
   const ownerId = randomUUID();
   const sessionId = randomUUID();
 
   // Insert org first (user's org_id FK must exist before inserting user).
   // orgs.owner_id has no FK constraint, so we can set it to the pre-generated UUID.
-  await db.insert(orgs).values({
+  await qb.insert(orgs).values({
     id: orgId,
     owner_id: ownerId,
     name: 'Test Org',
@@ -80,7 +81,7 @@ export async function createTestOrg(): Promise<{
   });
 
   const passwordHash = await bcrypt.hash('testpassword', 1); // cost=1 for speed in tests
-  await db.insert(users).values({
+  await qb.insert(users).values({
     id: ownerId,
     first: 'Test',
     last: 'Owner',
@@ -104,11 +105,13 @@ export async function createTestUser(
   orgId: string,
   role: 'manager' | 'member' = 'member',
   teamId?: string,
+  tx?: Transaction,
 ): Promise<{ userId: string; token: string }> {
+  const qb = tx ?? db;
   const userId = randomUUID();
   const sessionId = randomUUID();
 
-  await db.insert(users).values({
+  await qb.insert(users).values({
     id: userId,
     first: 'Test',
     last: 'User',
@@ -120,7 +123,7 @@ export async function createTestUser(
   });
 
   if (teamId) {
-    await db.insert(teamMembers).values({
+    await qb.insert(teamMembers).values({
       user_id: userId,
       team_id: teamId,
       role,
@@ -135,11 +138,12 @@ export async function createTestUser(
 /**
  * Creates a user with org_role = 'admin'. Returns { userId, token }.
  */
-export async function createTestAdmin(orgId: string): Promise<{ userId: string; token: string }> {
+export async function createTestAdmin(orgId: string, tx?: Transaction): Promise<{ userId: string; token: string }> {
+  const qb = tx ?? db;
   const userId = randomUUID();
   const sessionId = randomUUID();
 
-  await db.insert(users).values({
+  await qb.insert(users).values({
     id: userId,
     first: 'Test',
     last: 'User',
@@ -155,8 +159,9 @@ export async function createTestAdmin(orgId: string): Promise<{ userId: string; 
   return { userId, token };
 }
 
-export async function createTestTeam(orgId: string, managerId: string): Promise<{ teamId: string }> {
-  const [row] = await db
+export async function createTestTeam(orgId: string, managerId: string, tx?: Transaction): Promise<{ teamId: string }> {
+  const qb = tx ?? db;
+  const [row] = await qb
     .insert(teams)
     .values({ id: randomUUID(), org_id: orgId, manager_id: managerId, name: 'Test Team' })
     .returning();
@@ -166,8 +171,10 @@ export async function createTestTeam(orgId: string, managerId: string): Promise<
 export async function createTestCredentialType(
   orgId: string,
   overrides?: { name?: string; metadata_schema?: Record<string, unknown> },
+  tx?: Transaction,
 ): Promise<{ credentialTypeId: string }> {
-  const [row] = await db
+  const qb = tx ?? db;
+  const [row] = await qb
     .insert(credentialTypes)
     .values({
       id: randomUUID(),
@@ -181,15 +188,17 @@ export async function createTestCredentialType(
   return { credentialTypeId: row.id };
 }
 
-export async function assignCredentialToTeam(teamId: string, credentialTypeId: string): Promise<void> {
-  await db.insert(teamCredentials).values({ team_id: teamId, credential_id: credentialTypeId });
+export async function assignCredentialToTeam(teamId: string, credentialTypeId: string, tx?: Transaction): Promise<void> {
+  const qb = tx ?? db;
+  await qb.insert(teamCredentials).values({ team_id: teamId, credential_id: credentialTypeId });
 }
 
 /**
  * Inserts the five standard rejection reasons. Safe to call multiple times.
  * Returns the ID of the DOCUMENT_EXPIRED reason for use in assertions.
  */
-export async function seedRejectionReasons(): Promise<{ firstReasonId: string }> {
+export async function seedRejectionReasons(tx?: Transaction): Promise<{ firstReasonId: string }> {
+  const qb = tx ?? db;
   const SEED_REASONS = [
     { code: 'DOCUMENT_EXPIRED',   label: 'Document is expired' },
     { code: 'WRONG_TYPE',         label: 'Wrong credential type submitted' },
@@ -198,10 +207,10 @@ export async function seedRejectionReasons(): Promise<{ firstReasonId: string }>
     { code: 'OTHER',              label: 'Other — see review notes' },
   ];
 
-  const existing = await db.select().from(rejectionReasons).where(eq(rejectionReasons.code, 'DOCUMENT_EXPIRED')).limit(1);
+  const existing = await qb.select().from(rejectionReasons).where(eq(rejectionReasons.code, 'DOCUMENT_EXPIRED')).limit(1);
   if (existing.length > 0) return { firstReasonId: existing[0].id };
-  await db.insert(rejectionReasons).values(SEED_REASONS.map(r => ({ id: randomUUID(), ...r })));
-  const [row] = await db.select().from(rejectionReasons).where(eq(rejectionReasons.code, 'DOCUMENT_EXPIRED')).limit(1);
+  await qb.insert(rejectionReasons).values(SEED_REASONS.map(r => ({ id: randomUUID(), ...r })));
+  const [row] = await qb.select().from(rejectionReasons).where(eq(rejectionReasons.code, 'DOCUMENT_EXPIRED')).limit(1);
   return { firstReasonId: row.id };
 }
 
@@ -214,16 +223,17 @@ export async function createPendingUserCredential(
   userId: string,
   credentialTypeId: string,
   opts?: { fileKey?: string; submittedMetadata?: Record<string, unknown>; actorId?: string },
+  tx?: Transaction,
 ): Promise<{ userId: string; credentialTypeId: string }> {
-  await db.transaction(async (tx) => {
-    await tx.insert(userCredentials).values({
+  const run = async (qb: Transaction) => {
+    await qb.insert(userCredentials).values({
       user_id: userId,
       credential_id: credentialTypeId,
       status: 'pending',
       file_key: opts?.fileKey,
       submitted_metadata: opts?.submittedMetadata,
     });
-    await tx.insert(credentialAuditLog).values({
+    await qb.insert(credentialAuditLog).values({
       id: randomUUID(),
       user_id: userId,
       credential_id: credentialTypeId,
@@ -231,7 +241,13 @@ export async function createPendingUserCredential(
       to_status: 'pending',
       actor_id: opts?.actorId ?? userId,
     });
-  });
+  };
+
+  if (tx) {
+    await run(tx);
+  } else {
+    await db.transaction(run);
+  }
   return { userId, credentialTypeId };
 }
 
