@@ -1,10 +1,7 @@
-import { createDefaultEsmPreset, type JestConfigWithTsJest } from 'ts-jest';
+import { createDefaultEsmPreset } from 'ts-jest';
 
 const preset = createDefaultEsmPreset();
 
-// Spread the ESM preset but disable ts-jest diagnostics so tests aren't blocked
-// by missing @types/jest globals (describe, it, expect etc.). Runtime correctness
-// is provided by @jest/globals which Jest injects automatically.
 const projectPreset = {
   ...preset,
   transform: {
@@ -16,7 +13,7 @@ const sharedModuleNameMapper = {
   '^(\\.{1,2}/.*)\\.js$': '$1',
 };
 
-const config: JestConfigWithTsJest = {
+const config = {
   projects: [
     {
       displayName: 'unit',

@@ -380,7 +380,6 @@ export default function UploadWizardPage() {
     setProgress(0);
 
     // PUT to R2 using XHR for progress
-    let r2Ok = false;
     try {
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -396,15 +395,12 @@ export default function UploadWizardPage() {
         xhr.onerror = () => reject(new Error('Network error during upload'));
         xhr.send(file);
       });
-      r2Ok = true;
     } catch {
       setR2Failed(true);
       setStep(2);
       setUploadLoading(false);
       return;
     }
-
-    if (!r2Ok) return;
 
     // Confirm upload
     setPendingMetadata(metadata);
