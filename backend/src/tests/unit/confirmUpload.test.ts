@@ -38,7 +38,7 @@ const PARAMS: Parameters<typeof confirmUpload>[0] = {
 
 function resetMocks({ existingCred }: { existingCred?: { status: string } } = {}) {
   jest.clearAllMocks();
-  jest.mocked(headObject).mockResolvedValue(undefined as any);
+  jest.mocked(headObject).mockResolvedValue({ contentType: 'application/pdf', contentLength: 1024 } as any);
 
   // Each call to .limit() returns the next row set in sequence:
   // 1st → uploadTokens, 2nd → credentialTypes, 3rd → userCredentials
@@ -55,6 +55,18 @@ function resetMocks({ existingCred }: { existingCred?: { status: string } } = {}
 }
 
 describe('confirmUpload', () => {
+  it('throws AppError 422 for disallowed MIME type', async () => {
+    resetMocks();
+    jest.mocked(headObject).mockResolvedValue({ contentType: 'text/html', contentLength: 500 } as any);
+    await expect(confirmUpload(PARAMS)).rejects.toMatchObject({ statusCode: 422 });
+  });
+
+  it('throws AppError 422 when file exceeds 10MB', async () => {
+    resetMocks();
+    jest.mocked(headObject).mockResolvedValue({ contentType: 'application/pdf', contentLength: 11 * 1024 * 1024 } as any);
+    await expect(confirmUpload(PARAMS)).rejects.toMatchObject({ statusCode: 422 });
+  });
+
   it('throws ConflictError if existing credential is pending', async () => {
     resetMocks({ existingCred: { status: 'pending' } });
     const { ConflictError } = await import('../../errors/AppError.js');

@@ -12,7 +12,7 @@ import {
 // ESM-compatible mock — must be called before testHelpers (which imports app → s3) is loaded.
 jest.unstable_mockModule('../../utils/s3.js', () => ({
   getPutPresignedUrl: jest.fn().mockResolvedValue('https://s3.example.com/mock-presigned-url'),
-  headObject: jest.fn().mockResolvedValue(undefined),
+  headObject: jest.fn().mockResolvedValue({ contentType: 'application/pdf', contentLength: 1024 }),
   getGetPresignedUrl: jest.fn().mockResolvedValue('https://s3.example.com/mock-view-url'),
 }));
 
