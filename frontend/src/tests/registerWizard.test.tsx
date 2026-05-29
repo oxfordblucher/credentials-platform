@@ -112,4 +112,18 @@ describe('RegisterPage wizard', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/dashboard', { replace: true });
     });
   });
+
+  it('shows error banner and does not navigate when setupOrg fails', async () => {
+    mockSetupOrg.mockRejectedValue(new Error('Server error'));
+    render(<RegisterPage />);
+    fillStep1();
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    await waitFor(() => screen.getByLabelText(/first name/i));
+    fillStep2();
+    fireEvent.click(screen.getByRole('button', { name: /create account/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/registration failed/i)).toBeInTheDocument();
+    });
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
 });
