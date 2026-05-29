@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 export const setupSchema = z.object({
-  orgName: z.string(),
-  orgAddress: z.string(),
+  orgName: z.string().min(1).max(100),
+  orgAddress: z.string().min(1).max(255),
   first: z.string().min(1),
   last: z.string().min(1),
   dob: z.preprocess((val: unknown) => new Date(val as string), z.date()),

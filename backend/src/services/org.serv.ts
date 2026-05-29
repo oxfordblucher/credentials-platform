@@ -14,7 +14,7 @@ export const checkOrgAvailability = async (name: string): Promise<boolean> => {
 };
 
 export const createOrg = async (input: SetupInput) => {
-  const result = db.transaction(async (tx: Transaction) => {
+  return db.transaction(async (tx: Transaction) => {
     const [org] = await tx.insert(orgs).values({
       name: input.orgName,
       address: input.orgAddress,
