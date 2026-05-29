@@ -19,12 +19,12 @@ export const createOrg = async (input: SetupInput) => {
       email: input.email,
       password: input.password,
       org_id: org.id,
-      org_role: 'admin'
+      org_role: 'owner'
     }, tx);
 
-    const update = await tx.update(orgs).set({ admin_id: user.id }).where(eq(orgs.id, org.id)).returning({
+    const update = await tx.update(orgs).set({ owner_id: user.id }).where(eq(orgs.id, org.id)).returning({
       orgId: orgs.id,
-      admin: orgs.admin_id
+      owner: orgs.owner_id
     });
 
     return update;

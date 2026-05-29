@@ -3,6 +3,7 @@ import { db } from '../db/index.js';
 import { userCredentials, credentialTypes, users, teamMembers, teamCredentials, teams, credentialAuditLog } from '../db/schema/index.js';
 import { NotFoundError } from '../errors/AppError.js';
 import { getGetPresignedUrl } from '../utils/s3.js';
+import { logger } from '../utils/logger.js';
 
 export const getTeamSubmissions = async (teamId: string, orgId: string) => {
   return db
@@ -71,6 +72,14 @@ export const getSubmissionDocumentUrl = async (
   if (!row || !row.fileKey) throw new NotFoundError('Credential document not found');
 
   const url = await getGetPresignedUrl(row.fileKey, 3600);
+
+  logger.info({
+    event: 'document_access',
+    actor_id: actorId,
+    user_id: userId,
+    credential_id: credentialTypeId,
+    timestamp: new Date().toISOString(),
+  }, 'Presigned GET URL generated for credential document');
 
   await db.insert(credentialAuditLog).values({
     user_id: userId,

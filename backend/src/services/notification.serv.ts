@@ -142,10 +142,6 @@ export const notifyCredExpiring = async ({ userId, credId, daysUntilExpiry }: Ev
   await db.insert(notifications).values([memberNotification, ...managerNotifications]);
 }
 
-export const notifyInvitee = async () => {
-
-}
-
 export const notifyInviter = async ({ teamId, userId }: EventPayloads[typeof Events.INVITE_ACCEPTED]) => {
   const [team] = await db.select({ manager_id: teams.manager_id })
     .from(teams)

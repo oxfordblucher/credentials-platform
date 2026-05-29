@@ -18,7 +18,7 @@ export const getTeamMembers = async (req: Request, res: Response, next: NextFunc
 
 export const addStaff = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId } = req.params;
+    const teamId = req.params.teamId as string;
     const { userId } = req.body;
     await addMember(teamId, userId);
 
@@ -33,7 +33,8 @@ export const addStaff = async (req: Request, res: Response, next: NextFunction) 
 
 export const removeStaff = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { teamId, userId } = req.params;
+    const teamId = req.params.teamId as string;
+    const userId = req.params.userId as string;
     await deleteMember(teamId, userId);
 
     res.status(200).json({

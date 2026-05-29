@@ -4,7 +4,7 @@ import { db } from '../db/index.js';
 import { uploadTokens, userCredentials, credentialTypes, credentialAuditLog } from '../db/schema/index.js';
 import { getPutPresignedUrl, headObject } from '../utils/s3.js';
 import { buildMetadataValidator } from '../utils/metadataValidator.js';
-import { RateLimitError, NotFoundError, ConflictError } from '../errors/AppError.js';
+import { AppError, RateLimitError, NotFoundError, ConflictError } from '../errors/AppError.js';
 import { evtEmitter } from '../events/emitter.js';
 import { Events } from '../events/event.js';
 
@@ -61,7 +61,17 @@ export const confirmUpload = async ({ userId, orgId, credentialTypeId, submitted
 
   if (!token) throw new NotFoundError('No active upload token found');
 
-  await headObject(token.object_key);
+  const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
+  const MAX_FILE_BYTES = 10 * 1024 * 1024; // 10MB
+
+  const { contentType, contentLength } = await headObject(token.object_key);
+
+  if (!ALLOWED_MIME_TYPES.includes(contentType)) {
+    throw new AppError(422, `Unsupported file type: ${contentType}. Allowed: jpeg, png, pdf`);
+  }
+  if (contentLength > MAX_FILE_BYTES) {
+    throw new AppError(422, `File size ${contentLength} exceeds 10MB limit`);
+  }
 
   const [credType] = await db.select()
     .from(credentialTypes)

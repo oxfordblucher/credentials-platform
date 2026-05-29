@@ -14,10 +14,11 @@ import { Events, EventPayloads } from './event.js';
 import { sendEmail } from '../services/email.serv.js';
 import * as tmpl from '../services/emailTemplates.js';
 import { notifyCredVerified, notifyCredRevoked, notifyCredExpiring, notifyInviter } from '../services/notification.serv.js';
+import { logger } from '../utils/logger.js';
 
 function asyncHandler<T>(fn: (data: T) => Promise<void>) {
   return (data: T) => {
-    fn(data).catch(err => console.error('[listener] Unhandled error:', err));
+    fn(data).catch(err => logger.error({ err }, '[listener] Unhandled error'));
   };
 }
 

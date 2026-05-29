@@ -1,12 +1,10 @@
 import jwt from 'jsonwebtoken';
-import { readFileSync } from "fs";
 import { Response } from 'express';
 import { AccessPayload, RefreshPayload } from '../types/types.js';
 import crypto from 'crypto';
 
-const jwtSecrets = JSON.parse(readFileSync(process.env.JWT_SECRET_FILE!, 'utf-8'));
-const accessSecret = jwtSecrets.access_secret;
-const refreshSecret = jwtSecrets.refresh_secret;
+const accessSecret = process.env.JWT_ACCESS_SECRET!;
+const refreshSecret = process.env.JWT_REFRESH_SECRET!;
 
 export const hashToken = (token: string) => {
   return crypto.createHash('sha256').update(token).digest('hex');

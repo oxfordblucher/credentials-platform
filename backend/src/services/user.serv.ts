@@ -7,7 +7,7 @@ import { encryptPW, verifyPW } from "../utils/encrypt.js";
 import { deleteSessions } from "./session.serv.js";
 
 export const fetchProfile = async (userId: string) => {
-  const [result] = await db.query.users.findFirst({
+  const result = await db.query.users.findFirst({
     where: {
       id: userId
     },
@@ -46,7 +46,7 @@ export const fetchProfile = async (userId: string) => {
 }
 
 export const updateEmail = async (userId: string, email: string) => {
-  const [existing] = await db.query.users.findFirst({
+  const existing = await db.query.users.findFirst({
     where: {
       OR: [
         { email: email },
