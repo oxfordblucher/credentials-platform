@@ -76,7 +76,7 @@ export async function createTestOrg(tx?: Transaction): Promise<{
   await qb.insert(orgs).values({
     id: orgId,
     owner_id: ownerId,
-    name: 'Test Org',
+    name: `Test Org ${orgId.slice(0, 8)}`,
     address: '1 Test Street',
   });
 

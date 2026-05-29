@@ -1,23 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
-import { createUser, login, refresh } from '../services/auth.serv.js';
-import { registerSchema, loginSchema } from '../utils/zod.js';
+import { login, refresh } from '../services/auth.serv.js';
+import { loginSchema } from '../utils/zod.js';
 import { clearTokenCookie, setTokenCookie } from '../utils/token.js';
 import { AuthError } from '../errors/AppError.js';
 import { deleteSessions } from '../services/session.serv.js';
-
-export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const validated = registerSchema.parse(req.body);
-    await createUser(validated);
-
-    res.status(201).json({
-      message: 'User registered successfully'
-    });
-  }
-  catch (error) {
-    next(error);
-  }
-}
 
 export const loginUser = async (req: Request, res: Response, next: NextFunction) => {
   try {

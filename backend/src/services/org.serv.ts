@@ -3,10 +3,18 @@ import { db } from "../db/index.js";
 import { SetupInput } from "../utils/zod.js";
 import { Transaction } from "../types/types.js";
 import { createUser } from "./auth.serv.js";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+
+export const checkOrgAvailability = async (name: string): Promise<boolean> => {
+  const [existing] = await db.select({ id: orgs.id })
+    .from(orgs)
+    .where(sql`lower(${orgs.name}) = lower(${name})`)
+    .limit(1);
+  return !existing;
+};
 
 export const createOrg = async (input: SetupInput) => {
-  const result = db.transaction(async (tx: Transaction) => {
+  return db.transaction(async (tx: Transaction) => {
     const [org] = await tx.insert(orgs).values({
       name: input.orgName,
       address: input.orgAddress,

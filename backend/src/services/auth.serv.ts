@@ -1,14 +1,15 @@
 import { eq, sql } from 'drizzle-orm';
 import { teamMembers, users } from "../db/schema/index.js";
 import { db } from "../db/index.js";
-import { RegisterInput, LoginInput } from '../utils/zod.js';
+import { LoginInput } from '../utils/zod.js';
+import { CreateUserInput } from '../types/types.js';
 import { createSession, deleteSessions, fetchSessionInfo, updateSession } from './session.serv.js'
 import { verifyRefresh, signRefreshToken, signAccessToken, genUUID, hashToken } from '../utils/token.js';
 import { encryptPW, verifyPW } from '../utils/encrypt.js';
 import { AppError, AuthError, PermissionError, NotFoundError } from '../errors/AppError.js';
 import { Transaction } from '../types/types.js';
 
-export const createUser = async (userData: RegisterInput, tx?: Transaction) => {
+export const createUser = async (userData: CreateUserInput, tx?: Transaction) => {
   // Hash the password
   const { team, role, password, dob, ...rest } = userData;
   dob.setHours(12);

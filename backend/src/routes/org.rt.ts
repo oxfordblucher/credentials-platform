@@ -1,11 +1,12 @@
 import { Router } from 'express';
 import { authenticate, authorize, requireAdmin, requireOwner } from '../middleware/auth.js';
-import { getTeams, makeTeam, removeTeam, setupOrg, promoteOwnerCtrl, addCredentialType, getCredentialTypes, editCredentialType, removeCredentialType } from '../controllers/org.ctrl.js';
+import { getTeams, makeTeam, removeTeam, setupOrg, promoteOwnerCtrl, addCredentialType, getCredentialTypes, editCredentialType, removeCredentialType, checkOrgName } from '../controllers/org.ctrl.js';
 import { getOrgComplianceCtrl } from '../controllers/compliance.ctrl.js';
 
 const router = Router();
 
 router.post('/', setupOrg);
+router.get('/check', checkOrgName);
 
 router.use(authenticate);
 

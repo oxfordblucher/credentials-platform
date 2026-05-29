@@ -3,19 +3,16 @@ import {
   login as apiLogin,
   logout as apiLogout,
   refreshToken,
-  register as apiRegister,
 } from '~/lib/api/auth';
 import { clearToken } from '~/lib/auth/tokenStore';
 import { getMyProfile } from '~/lib/api/profiles';
 import type { AuthUser } from '~/lib/types';
-import type { RegisterPayload } from '~/lib/api/auth';
 
 export interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
-  register: (data: RegisterPayload) => Promise<void>;
   refresh: () => Promise<void>;
 }
 
@@ -78,10 +75,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
   }
 
-  async function register(data: RegisterPayload) {
-    await apiRegister(data);
-  }
-
   async function refresh() {
     const { accessToken } = await refreshToken();
     const profile = await getMyProfile();
@@ -89,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout, register, refresh }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, refresh }}>
       {children}
     </AuthContext.Provider>
   );
