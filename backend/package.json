@@ -41,6 +41,7 @@
     "test:integration": "node --experimental-vm-modules node_modules/.bin/jest --testPathPatterns 'tests/integration'",
     "test:watch": "node --experimental-vm-modules node_modules/.bin/jest --watch",
     "test:coverage": "node --experimental-vm-modules node_modules/.bin/jest --coverage",
-    "build": "tsc --project tsconfig.build.json"
+    "build": "tsc --project tsconfig.build.json",
+    "seed": "npx tsx src/db/seed.ts"
   }
 }
