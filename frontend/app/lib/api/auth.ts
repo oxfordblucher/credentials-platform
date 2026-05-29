@@ -8,10 +8,12 @@ export interface LoginPayload {
   password: string;
 }
 
-export interface RegisterPayload {
+export interface SetupOrgPayload {
+  orgName: string;
+  orgAddress: string;
   firstName: string;
   lastName: string;
-  dob: string; // ISO date string
+  dob: string;
   email: string;
   password: string;
 }
@@ -53,12 +55,21 @@ export async function login(data: LoginPayload): Promise<{ user: AuthUser; acces
   return { user, accessToken: token };
 }
 
-export async function register(data: RegisterPayload): Promise<void> {
-  await apiFetch<{ message: string }>('/auth/register', {
+export async function checkOrgName(name: string): Promise<{ available: boolean }> {
+  return apiFetch<{ available: boolean }>(
+    `/orgs/check?name=${encodeURIComponent(name)}`,
+    { skipAuth: true }
+  );
+}
+
+export async function setupOrg(data: SetupOrgPayload): Promise<void> {
+  await apiFetch<{ message: string }>('/orgs', {
     method: 'POST',
     body: JSON.stringify({
-      firstName: data.firstName,
-      lastName: data.lastName,
+      orgName: data.orgName,
+      orgAddress: data.orgAddress,
+      first: data.firstName,
+      last: data.lastName,
       dob: data.dob,
       email: data.email,
       password: data.password,
