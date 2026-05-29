@@ -13,11 +13,11 @@ services:
       context: ./backend
       dockerfile: Dockerfile
       target: dev
+    env_file:
+      - ./backend/.env
     environment:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:${DB_PASSWORD}@db:5432/credplat
-      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
-      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
     ports:
       - "3001:3000"
     networks:
@@ -39,6 +39,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       target: dev
+    env_file:
+      - ./frontend/.env
     ports:
       - "3000:3000"
     volumes:

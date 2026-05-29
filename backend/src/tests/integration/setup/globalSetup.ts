@@ -20,7 +20,7 @@ export default async function globalSetup(): Promise<void> {
     return;
   }
 
-  const env = { ...process.env, DATABASE_URL: url };
+  const env = { ...process.env, DATABASE_URL: url, DATABASE_URL_DIRECT: url };
 
   console.log('[globalSetup] Pushing schema to test database…');
   execSync('npx drizzle-kit push', { env, stdio: 'inherit', cwd: backendRoot });

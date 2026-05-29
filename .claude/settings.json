@@ -1,10 +1,10 @@
 {
-  "enabledPlugins": {
-    "superpowers@claude-plugins-official": true
-  },
   "permissions": {
     "allow": [
       "Bash(git commit*)"
     ]
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true
   }
 }

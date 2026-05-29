@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { jest, describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
 import { randomUUID } from 'crypto';
 import request from 'supertest';
 import { and, eq } from 'drizzle-orm';
@@ -11,9 +11,9 @@ import {
 
 // ESM-compatible mock — must be called before testHelpers (which imports app → s3) is loaded.
 jest.unstable_mockModule('../../utils/s3.js', () => ({
-  getPutPresignedUrl: jest.fn().mockResolvedValue('https://s3.example.com/mock-presigned-url'),
-  headObject: jest.fn().mockResolvedValue({ contentType: 'application/pdf', contentLength: 1024 }),
-  getGetPresignedUrl: jest.fn().mockResolvedValue('https://s3.example.com/mock-view-url'),
+  getPutPresignedUrl: jest.fn<() => Promise<string>>().mockResolvedValue('https://s3.example.com/mock-presigned-url'),
+  headObject: jest.fn<() => Promise<{ contentType: string; contentLength: number }>>().mockResolvedValue({ contentType: 'application/pdf', contentLength: 1024 }),
+  getGetPresignedUrl: jest.fn<() => Promise<string>>().mockResolvedValue('https://s3.example.com/mock-view-url'),
 }));
 
 const {

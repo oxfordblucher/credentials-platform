@@ -3,7 +3,7 @@ import { fetchProfile, updateEmail, updateName, updatePassword } from '../servic
 
 export const getProfile = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id ?? req.user!.id;
+    const id = (req.params.id as string) ?? req.user!.id;
     const profile = await fetchProfile(id);
     
     res.status(200).json({
