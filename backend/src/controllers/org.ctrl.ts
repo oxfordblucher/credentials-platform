@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { newTeamSchema, setupSchema, createCredTypeSchema, updateCredTypeSchema, listCredTypeQuerySchema } from '../utils/zod.js';
-import { createOrg, fetchTeams, createTeam, deleteTeam } from '../services/org.serv.js';
+import { checkOrgAvailability, createOrg, fetchTeams, createTeam, deleteTeam } from '../services/org.serv.js';
 import { promoteToOwner } from '../services/user.serv.js';
 import {
   createCredentialType,
@@ -10,6 +10,19 @@ import {
 } from '../services/credentialType.serv.js';
 import { db } from '../db/index.js';
 import { rejectionReasons } from '../db/schema/index.js';
+
+export const checkOrgName = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const name = req.query.name as string;
+    if (!name?.trim()) {
+      return res.status(400).json({ message: 'name query param is required' });
+    }
+    const available = await checkOrgAvailability(name.trim());
+    res.status(200).json({ available });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export const setupOrg = async (req: Request, res: Response, next: NextFunction) => {
   try {

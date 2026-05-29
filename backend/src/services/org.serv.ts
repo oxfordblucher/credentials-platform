@@ -5,6 +5,14 @@ import { Transaction } from "../types/types.js";
 import { createUser } from "./auth.serv.js";
 import { eq } from "drizzle-orm";
 
+export const checkOrgAvailability = async (name: string): Promise<boolean> => {
+  const [existing] = await db.select({ id: orgs.id })
+    .from(orgs)
+    .where(eq(orgs.name, name))
+    .limit(1);
+  return !existing;
+};
+
 export const createOrg = async (input: SetupInput) => {
   const result = db.transaction(async (tx: Transaction) => {
     const [org] = await tx.insert(orgs).values({
