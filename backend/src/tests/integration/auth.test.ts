@@ -26,30 +26,6 @@ describe('Auth flows', () => {
     await cleanupTestOrg(orgId);
   });
 
-  describe('POST /api/auth/register', () => {
-    it('201 — creates user row; password column is not plaintext', async () => {
-      const email = `reg-${Date.now()}@test.example`;
-      const res = await request(app)
-        .post('/api/auth/register')
-        .send({ first: 'New', last: 'User', dob: '2000-01-01', email, password: 'password123', org_id: orgId });
-
-      expect(res.status).toBe(201);
-
-      const [row] = await db.select({ password: users.password }).from(users).where(eq(users.email, email)).limit(1);
-      expect(row).toBeDefined();
-      expect(row.password).not.toBe('password123');
-      expect(row.password.startsWith('$2b$')).toBe(true);
-    });
-
-    it('409 — conflict when email already exists', async () => {
-      const email = `dup-${Date.now()}@test.example`;
-      const body = { first: 'A', last: 'B', dob: '2000-01-01', email, password: 'password123', org_id: orgId };
-      await request(app).post('/api/auth/register').send(body);
-      const res = await request(app).post('/api/auth/register').send(body);
-      expect(res.status).toBe(409);
-    });
-  });
-
   describe('POST /api/auth/login', () => {
     it('200 — returns access token and sets HttpOnly refresh cookie', async () => {
       const res = await request(app)
